@@ -7,7 +7,7 @@
 void ShadowPass::RenderPreset() {
 	FrameBuffer<ShadowFBO>().instance()->Bind();
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glViewport(0, 0, shadowTextureSize, shadowTextureSize);
+	glViewport(0, 0, ShadowMapSize, ShadowMapSize);
 	glCullFace(GL_FRONT);
 }
 
@@ -83,6 +83,7 @@ void DirectLightPass::RenderPreset() {
 	glBlendFunc(GL_ONE, GL_ONE);
 
 	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_ALWAYS);
 }
 
 void DirectLightPass::RenderFunction(Camera* camera) {

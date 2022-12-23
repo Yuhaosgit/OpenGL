@@ -98,7 +98,7 @@ public:
 	}
 
 	inline Quaternion  operator -()	const {
-		return Quaternion(-x, -y, -z, -w);
+		return Quaternion(-x, -y, -z, w);
 	}
 
 	inline Quaternion  operator -(const Quaternion& a)	const {

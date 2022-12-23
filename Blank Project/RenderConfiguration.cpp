@@ -32,7 +32,7 @@ GameObject* Renderer::Instantiate(std::shared_ptr<Prefab> prefab, Vector3 positi
 	else {
 		for (auto& model : prefab->models) {
 			GameObject* child = new GameObject();
-			instance->GetComponent<Transform>()->AddChild(child->GetComponent<Transform>());
+ 			instance->GetComponent<Transform>()->AddChild(child->GetComponent<Transform>());
 			AttachMeshRender(child, model);
 		}
 	}
@@ -136,13 +136,17 @@ void Renderer::SetEnvironment() {
 	};
 
 	auto CreateObjects = [&]() {
-		Instantiate(Importer::PrefabSet["Pegasus statue"], ground->GetHeight(0, 0));
+		auto cur = Instantiate(Importer::PrefabSet["Pegasus statue"], ground->GetHeight(0, 0));
 	};
 
 	auto CreateLights = [&]() {
 		auto directLight = Instantiate(std::make_shared<Light>());
 		directLight->GetComponent<Light>()->shadowOpen = true;
-		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(Vector3(1, 0, 0), 45));
+
+		auto aroundX = Quaternion::AxisAngleToQuaterion(Vector3(1, 0, 0), 45);
+		auto aroundY = Quaternion::AxisAngleToQuaterion(Vector3(0, 1, 0), 90);
+
+		directLight->GetComponent<Transform>()->SetRotate(aroundX*aroundY);
 	};
 
 	CreateGround();

@@ -34,15 +34,13 @@ void CopyRenderTexture(const RenderTexture& read, const RenderTexture& draw, Buf
 
 #pragma region shadowFBO
 void ShadowFBO::GenerateFrameBuffer() {
-	int width = OGLRenderer::GetWidth();
-	int height = OGLRenderer::GetHeight();
-
 	bool initFlag = false;
 	glGenFramebuffers(1, &frameBuffer);
 	//lighting buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = depthTarget.Generate(0, GenerateShadowTexture, width, height);
+	initFlag = depthTarget.Generate(0, GenerateShadowTexture, ShadowMapSize, ShadowMapSize);
+	glDrawBuffer(GL_NONE);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

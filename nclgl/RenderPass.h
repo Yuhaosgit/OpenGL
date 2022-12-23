@@ -40,8 +40,6 @@ class ShadowPass :public RenderPassPrototype {
 	void RenderPreset() override;
 	void RenderFunction(Camera* camera) override;
 	void RenderAfterSet() override;
-
-	const int shadowTextureSize = 2048;
 };
 
 class GbufferPass :public RenderPassPrototype {

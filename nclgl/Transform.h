@@ -35,6 +35,7 @@ public:
 	const Vector3& GetPosition();
 
 	void Update();
+	void Update(const Vector3& vec);
 
 	void AddChild(std::weak_ptr<Transform> child);
 	std::weak_ptr<Transform> parent;

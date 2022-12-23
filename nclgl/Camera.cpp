@@ -60,13 +60,19 @@ void Camera::UpdateList() {
 				continue;
 			if (light.lock()->GetLightType() == LightType::Direct) {
 				auto transform = light.lock()->gameObject->GetComponent<Transform>();
-				Matrix4 lightProjectjMatrix = Matrix4::Orthographic(0, 1000, 1000, -1000, 1000, -1000);
-				Matrix4 lightViewMatrix = transform->GetRotate().RotationMatrix();
+				auto rotate = -transform->GetRotate();
+
+				Matrix4 lightProjectjMatrix = Matrix4::Orthographic(0, 20, 20, -20, 20, -20);
+				Matrix4 lightViewMatrix = rotate.RotationMatrix();
 
 				light.lock()->shadowMatrix = lightProjectjMatrix * lightViewMatrix;
-				for (auto meshRender : MeshRender::meshRenders) {
-					light.lock()->shadowList.emplace_back(meshRender);
+
+				for (int i = 1; i < MeshRender::meshRenders.size(); ++i) {
+					light.lock()->shadowList.emplace_back(MeshRender::meshRenders[i]);
 				}
+				//for (auto meshRender : MeshRender::meshRenders) {
+				//	light.lock()->shadowList.emplace_back(meshRender);
+				//}
 			}
 		}
 	};

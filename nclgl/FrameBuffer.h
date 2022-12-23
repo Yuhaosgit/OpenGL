@@ -3,6 +3,8 @@
 #include "Material.h"
 #include <memory>
 
+#define ShadowMapSize 2048
+
 template <typename T>
 class FrameBuffer {
 public:

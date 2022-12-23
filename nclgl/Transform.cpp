@@ -45,7 +45,7 @@ void Transform::SetPosition(const Vector3& vec) {
 void Transform::Translate(const Vector3& vec) {
 	Vector3 position = positionMatrix.GetPositionVector();
 	positionMatrix.SetPositionVector(position + vec);
-	Update();
+	Update(vec);
 }
 
 const Vector3& Transform::GetPosition() {
@@ -56,6 +56,13 @@ void Transform::Update() {
 	for (int i = 0; i < children.size(); ++i) {
 		auto offset = GetPosition() + children[i].lock()->GetPosition();
 		children[i].lock()->SetPosition(offset);
+	}
+	modelMatrix = rotate.RotationMatrix() * positionMatrix * scaleMatrix;
+}
+
+void Transform::Update(const Vector3& vec) {
+	for (int i = 0; i < children.size(); ++i) {
+		children[i].lock()->Translate(vec);
 	}
 	modelMatrix = rotate.RotationMatrix() * positionMatrix * scaleMatrix;
 }

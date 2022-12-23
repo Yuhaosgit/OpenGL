@@ -40,18 +40,22 @@ void main(void) {
 	vec3 lightCoord = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
 
 	float currentDepthLS = lightCoord.z;
-	float visibility = 1.0;
+	float visibility = 1;
 
-	for (int i = 0; i < 4; i++) {
-		if (texture(shadowTex, lightCoord + poissonDisk[i] / 2300.0) < 1) {
-			visibility -= 0.25;
-		}
+	if (texture(shadowTex, lightCoord) < 1) {
+		visibility = 0.2;
 	}
+
+	//for (int i = 0; i < 4; i++) {
+	//	if (texture(shadowTex, lightCoord + poissonDisk[i] / 2300.0) < 1) {
+	//		visibility -= 0.25;
+	//	}
+	//}
 	
 	//specular and diffuse
 	vec3 normal = normalize(texelFetch(normTex, ivec2(gl_FragCoord.xy), 0).xyz * 2.0 - 1.0);
 
-	vec3 incident = -lightOrientation;
+	vec3 incident = lightOrientation;
 	vec3 viewDir = normalize(cameraPos - worldPos);
 	vec3 halfDir = normalize(incident + viewDir);
 
@@ -60,6 +64,6 @@ void main(void) {
 
 	specFactor = pow(specFactor, 60.0);
 
-	diffuseOutput = vec4(lightColour.xyz * lambert, 1.0);
-	specularOutput = vec4(lightColour.xyz * specFactor * 0.33, 1.0);
+	diffuseOutput = vec4(lightColour.xyz * lambert * visibility, 1.0);
+	specularOutput = vec4(lightColour.xyz * specFactor * 0.33 * visibility, 1.0);
 }
