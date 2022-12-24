@@ -27,6 +27,7 @@ void Camera::UpdateViewMatrix() {
 	posMatrix.values[12] = -posMatrix.values[12];
 	posMatrix.values[13] = -posMatrix.values[13];
 	posMatrix.values[14] = -posMatrix.values[14];
+
 	viewMatrix = transform->rotate.RotationMatrix() * posMatrix;
 }
 
@@ -60,19 +61,16 @@ void Camera::UpdateList() {
 				continue;
 			if (light.lock()->GetLightType() == LightType::Direct) {
 				auto transform = light.lock()->gameObject->GetComponent<Transform>();
-				auto rotate = -transform->GetRotate();
+				auto direction = transform->GetRotate().RotationMatrix().Forward();
 
-				Matrix4 lightProjectjMatrix = Matrix4::Orthographic(0, 20, 20, -20, 20, -20);
-				Matrix4 lightViewMatrix = rotate.RotationMatrix();
-
-				light.lock()->shadowMatrix = lightProjectjMatrix * lightViewMatrix;
+				Matrix4 lightProjectjMatrix = Matrix4::Orthographic(0.1, 200, 100, -100, 100, -100);
+				Matrix4 lightViewMatrix = Matrix4::BuildViewMatrix(direction * 100, Vector3(0, 0, 0));
+			
+ 				light.lock()->shadowMatrix = lightProjectjMatrix * lightViewMatrix;
 
 				for (int i = 1; i < MeshRender::meshRenders.size(); ++i) {
 					light.lock()->shadowList.emplace_back(MeshRender::meshRenders[i]);
 				}
-				//for (auto meshRender : MeshRender::meshRenders) {
-				//	light.lock()->shadowList.emplace_back(meshRender);
-				//}
 			}
 		}
 	};

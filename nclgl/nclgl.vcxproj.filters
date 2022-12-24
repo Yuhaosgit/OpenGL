@@ -92,6 +92,9 @@
     <ClCompile Include="CameraMove.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
+    <ClCompile Include="Skybox.cpp">
+      <Filter>Component\Skybox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
@@ -207,6 +210,9 @@
     <ClInclude Include="ScriptFiles.h">
       <Filter>Scripts</Filter>
     </ClInclude>
+    <ClInclude Include="Skybox.h">
+      <Filter>Component\Skybox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLAD">
@@ -268,6 +274,9 @@
     </Filter>
     <Filter Include="RenderGraph">
       <UniqueIdentifier>{6445a623-0de2-4c80-b480-fa027eec0d5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Component\Skybox">
+      <UniqueIdentifier>{60c32fef-80de-4d88-ab84-0bd0bd26bbcd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -15,56 +15,64 @@ Transform::Transform() {
 	modelMatrix = rotate.RotationMatrix() * positionMatrix * scaleMatrix;
 }
 
+void Transform::UpdateModelMatrix() {
+	modelMatrix = positionMatrix * rotate.RotationMatrix() * scaleMatrix;
+}
+
 void Transform::SetScale(const Vector3& vec) {
 	scaleMatrix = Matrix4::Scale(vec);
-	Update();
+
+	for (int i = 0; i < children.size(); ++i) {
+		children[i].lock()->SetScale(vec);
+	}
+	UpdateModelMatrix();
 }
-const Vector3& Transform::GetScale() {
+Vector3 Transform::GetScale() {
 	return scaleMatrix.GetScalingVector();
 }
 
 void Transform::SetRotate(const Vector3& vec) {
 	rotate = Quaternion::EulerAnglesToQuaternion(vec.x, vec.y, vec.z);
-	Update();
+
+	for (int i = 0; i < children.size(); ++i) {
+		children[i].lock()->SetRotate(vec);
+	}
+	UpdateModelMatrix();
 }
 
 void Transform::SetRotate(const Quaternion& quat) {
 	rotate = quat;
-	Update();
+
+	for (int i = 0; i < children.size(); ++i) {
+		children[i].lock()->SetRotate(quat);
+	}
+	UpdateModelMatrix();
 }
 
-const Quaternion& Transform::GetRotate() {
+Quaternion Transform::GetRotate() {
 	return rotate;
 }
 
 void Transform::SetPosition(const Vector3& vec) {
 	positionMatrix.SetPositionVector(vec);
-	Update();
+
+	for (int i = 0; i < children.size(); ++i) {
+		children[i].lock()->SetPosition(vec);
+	}
+	UpdateModelMatrix();
 }
 
 void Transform::Translate(const Vector3& vec) {
-	Vector3 position = positionMatrix.GetPositionVector();
-	positionMatrix.SetPositionVector(position + vec);
-	Update(vec);
-}
+	positionMatrix.SetPositionVector(positionMatrix.GetPositionVector() + vec);
 
-const Vector3& Transform::GetPosition() {
-	return positionMatrix.GetPositionVector();
-}
-
-void Transform::Update() {
-	for (int i = 0; i < children.size(); ++i) {
-		auto offset = GetPosition() + children[i].lock()->GetPosition();
-		children[i].lock()->SetPosition(offset);
-	}
-	modelMatrix = rotate.RotationMatrix() * positionMatrix * scaleMatrix;
-}
-
-void Transform::Update(const Vector3& vec) {
 	for (int i = 0; i < children.size(); ++i) {
 		children[i].lock()->Translate(vec);
 	}
-	modelMatrix = rotate.RotationMatrix() * positionMatrix * scaleMatrix;
+	UpdateModelMatrix();
+}
+
+Vector3 Transform::GetPosition() {
+	return positionMatrix.GetPositionVector();
 }
 
 void Transform::AddChild(std::weak_ptr<Transform> child){

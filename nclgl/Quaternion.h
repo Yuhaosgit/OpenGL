@@ -62,6 +62,7 @@ public:
 
 	static Quaternion EulerAnglesToQuaternion(float pitch, float yaw, float roll);
 	static Quaternion AxisAngleToQuaterion(const Vector3& vector, float degrees);
+	static Quaternion AxisAngleToQuaterion(float pitch, float yaw, float roll);
 
 	inline bool  operator ==(const Quaternion& from)	const {
 		if (x != from.x || y != from.y || z != from.z || w != from.w) {
@@ -98,7 +99,7 @@ public:
 	}
 
 	inline Quaternion  operator -()	const {
-		return Quaternion(-x, -y, -z, w);
+		return Quaternion(-x, -y, -z, -w);
 	}
 
 	inline Quaternion  operator -(const Quaternion& a)	const {

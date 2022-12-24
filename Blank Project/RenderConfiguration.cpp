@@ -127,7 +127,7 @@ void Renderer::SetEnvironment() {
 		GameObject* mainCamera = Instantiate(camera);
 		std::shared_ptr<CameraMove> FPSMove = std::make_shared<CameraMove>();
 		mainCamera->AddComponent(FPSMove);
-		mainCamera->GetComponent<Transform>()->Translate(Vector3(-0.5, 8.3, -0.4));
+		mainCamera->GetComponent<Transform>()->Translate(Vector3(-8, 15, 2.3));
 	};
 
 	auto CreateGround = [&]() {
@@ -137,16 +137,13 @@ void Renderer::SetEnvironment() {
 
 	auto CreateObjects = [&]() {
 		auto cur = Instantiate(Importer::PrefabSet["Pegasus statue"], ground->GetHeight(0, 0));
+		cur->GetComponent<Transform>()->SetScale(Vector3(10,10,10));
 	};
 
 	auto CreateLights = [&]() {
 		auto directLight = Instantiate(std::make_shared<Light>());
 		directLight->GetComponent<Light>()->shadowOpen = true;
-
-		auto aroundX = Quaternion::AxisAngleToQuaterion(Vector3(1, 0, 0), 45);
-		auto aroundY = Quaternion::AxisAngleToQuaterion(Vector3(0, 1, 0), 90);
-
-		directLight->GetComponent<Transform>()->SetRotate(aroundX*aroundY);
+		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(45, 0, 0));
 	};
 
 	CreateGround();

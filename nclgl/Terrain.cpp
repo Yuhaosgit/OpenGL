@@ -104,8 +104,8 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 }
 
 
-Vector3 Terrain::GetHeight(const unsigned int& xPos, const unsigned int& zPos) const {
-	int x = 0, z = 0;
+Vector3 Terrain::GetHeight(int xPos, int zPos) const {
+	int x = -width / 2, z = -height / 2;
 	for (int i = 0; i < width; ++i) {
 		if (xPos <= mesh.lock()->vertices[i].x) {
 			x = i;

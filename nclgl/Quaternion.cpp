@@ -216,6 +216,11 @@ Quaternion Quaternion::AxisAngleToQuaterion(const Vector3& vector, float degrees
 	return Quaternion((float)(vector.x * result), (float)(vector.y * result), (float)(vector.z * result), (float)cos(theta / 2.0f));
 }
 
+Quaternion Quaternion::AxisAngleToQuaterion(float pitch, float yaw, float roll) {
+	return AxisAngleToQuaterion(Vector3(1, 0, 0), pitch) *
+		AxisAngleToQuaterion(Vector3(0, 1, 0), yaw) *
+		AxisAngleToQuaterion(Vector3(0, 0, 1), roll);
+}
 
 Vector3		Quaternion::operator *(const Vector3& a)	const {
 	Quaternion newVec = *this * Quaternion(a.x, a.y, a.z, 0.0f) * Conjugate();

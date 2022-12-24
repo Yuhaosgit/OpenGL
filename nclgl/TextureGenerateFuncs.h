@@ -6,8 +6,6 @@ void GenerateShadowTexture(int width, int height, GLuint* texture, GLenum attatc
 	glTexImage2D
 	(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *texture, 0);
-
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 }
 
 void GenerateDepthTexture(int width, int height, GLuint* texture, GLenum attatchment) {

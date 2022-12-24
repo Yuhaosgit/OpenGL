@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <functional>
 
 #include "Component.h"
 #include "Matrix4.h"
@@ -24,18 +25,15 @@ public:
 	const Matrix4& GetModelMatrix() { return modelMatrix; }
 
 	void SetScale(const Vector3& vec);
-	const Vector3& GetScale();
+	Vector3 GetScale();
 
 	void SetRotate(const Vector3& vec);
 	void SetRotate(const Quaternion& quat);
-	const Quaternion& GetRotate();
+	Quaternion GetRotate();
 
 	void SetPosition(const Vector3& vec);
 	void Translate(const Vector3& vec);
-	const Vector3& GetPosition();
-
-	void Update();
-	void Update(const Vector3& vec);
+	Vector3 GetPosition();
 
 	void AddChild(std::weak_ptr<Transform> child);
 	std::weak_ptr<Transform> parent;
@@ -47,4 +45,6 @@ private:
 	Matrix4 positionMatrix;
 	Matrix4 scaleMatrix;
 	Quaternion rotate;
+
+	void UpdateModelMatrix();
 };

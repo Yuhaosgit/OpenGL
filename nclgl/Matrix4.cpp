@@ -60,14 +60,14 @@ Matrix4 Matrix4::Perspective(float znear, float zfar, float aspect, float fov) {
 Matrix4 Matrix4::Orthographic(float znear, float zfar,float right, float left, float top, float bottom)	{
 	Matrix4 m;
 
-	m.values[0]	= 2.0f / (right-left);
-	m.values[5]	= 2.0f / (top-bottom);
-	m.values[10]	= -2.0f / (zfar-znear);
+	m.values[0] = 2.0f / (right - left);
+	m.values[5] = 2.0f / (top - bottom);
+	m.values[10] = -2.0f / (zfar - znear);
 
-	m.values[12]  = -(right+left)/(right-left);
-	m.values[13]  = -(top+bottom)/(top-bottom);
-	m.values[14]  = -(zfar+znear)/(zfar-znear);
-	m.values[15]  = 1.0f;
+	m.values[12] = -(right + left) / (right - left);
+	m.values[13] = -(top + bottom) / (top - bottom);
+	m.values[14] = -(zfar + znear) / (zfar - znear);
+	m.values[15] = 1.0f;
 
 	return m;
 }
@@ -251,4 +251,16 @@ Matrix4 Matrix4::Inverse()	const {
 Matrix4 Matrix4::IdentityMatrix() {
 	Matrix4 identity;
 	return identity;
+}
+
+Vector3 Matrix4::Forward() const {
+	return Vector3(values[2], values[6], values[10]);
+}
+
+Vector3 Matrix4::Up() const {
+	return Vector3(values[1], values[5], values[9]);
+}
+
+Vector3 Matrix4::Left() const {
+	return Vector3(values[0], values[4], values[8]);
 }

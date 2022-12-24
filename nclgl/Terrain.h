@@ -22,5 +22,5 @@ public:
 
 	~Terrain() = default;
 
-	Vector3 GetHeight(const unsigned int& x, const unsigned int& z) const;
+	Vector3 GetHeight(int x, int z) const;
 };

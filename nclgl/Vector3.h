@@ -32,6 +32,12 @@ public:
 		z = copy.z;
 	}
 
+	Vector3(Vector3&& copy) noexcept {
+		x = copy.x;
+		y = copy.y;
+		z = copy.z;
+	}
+
 	~Vector3(void){}
 
 	float x;

@@ -145,14 +145,10 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderConfiguration.cpp" />
-    <ClCompile Include="SceneSystem.cpp" />
-    <ClCompile Include="Skybox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PositionData.h" />
-    <ClInclude Include="SceneSystem.h" />
-    <ClInclude Include="Skybox.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

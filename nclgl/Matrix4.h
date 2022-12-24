@@ -78,6 +78,10 @@ public:
 	void    Invert();
 	Matrix4 Inverse() const;
 
+	Vector3 Forward() const;
+	Vector3 Left() const;
+	Vector3 Up() const;
+
 	//Multiplies 'this' matrix by matrix 'a'. Performs the multiplication in 'OpenGL' order (ie, backwards)
 	inline Matrix4 operator*(const Matrix4 &a) const{	
 		Matrix4 out;

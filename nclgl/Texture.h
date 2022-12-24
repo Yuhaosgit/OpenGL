@@ -23,11 +23,21 @@ enum class BufferType {
 	COLOR, DEPTH, STENCIL, STENCIL_DEPTH
 };
 
-class RenderTexture:public Texture2D {
+class RenderTexture: public Texture2D {
 public:
 	bool Generate(GLenum attatchment, GenerateFunc generateFunc, int width, int height);
 	GLuint frameBuffer;
 	BufferType bufferType;
 	int width = 0;
 	int height = 0;
+};
+
+class TextureCube {
+public:
+	GLuint upTex;
+	GLuint downTex;
+	GLuint leftTex;
+	GLuint rightTex;
+	GLuint frontTex;
+	GLuint backTex;
 };

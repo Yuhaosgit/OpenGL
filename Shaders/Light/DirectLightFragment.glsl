@@ -2,7 +2,7 @@
 
 uniform sampler2D normTex;
 uniform sampler2D depthTex;
-uniform sampler2DShadow shadowTex;
+uniform sampler2D shadowTex;
 
 uniform vec2 pixelSize; // reciprocal of resolution
 uniform vec3 cameraPos;
@@ -27,7 +27,7 @@ void main(void) {
 	//trans to world coordinate
 	vec2 texCoord = vec2(gl_FragCoord.xy * pixelSize);
 	vec4 stencilDepth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0);
-	if (stencilDepth.a == 0x00)
+	if (stencilDepth.a != 1)
 		discard;
 	float depth = stencilDepth.r;
 
@@ -38,13 +38,12 @@ void main(void) {
 	//shadow
 	vec4 lightSpace = shadowMatrix * vec4(worldPos, 1.0);
 	vec3 lightCoord = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
+	float currentDepth = lightCoord.z;
+	float closetDepth = texture(shadowTex, lightCoord.xy).r;
 
-	float currentDepthLS = lightCoord.z;
-	float visibility = 1;
-
-	if (texture(shadowTex, lightCoord) < 1) {
-		visibility = 0.2;
-	}
+	float visibility = (closetDepth < currentDepth ? 0 : 1);
+	if (currentDepth > 1.0)
+		visibility = 1;
 
 	//for (int i = 0; i < 4; i++) {
 	//	if (texture(shadowTex, lightCoord + poissonDisk[i] / 2300.0) < 1) {
