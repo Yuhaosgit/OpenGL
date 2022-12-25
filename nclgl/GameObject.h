@@ -8,6 +8,7 @@
 #include "Light.h"
 #include "Terrain.h"
 #include "Component.h"
+#include "Skybox.h"
 #include "ScriptFiles.h"
 
 #include <unordered_map>

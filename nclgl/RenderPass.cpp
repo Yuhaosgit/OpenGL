@@ -122,7 +122,13 @@ void CombinePass::RenderPreset() {
 }
 
 void CombinePass::RenderFunction(Camera* camera) {
-	Importer::MaterialSet["CombineMaterial"]->SubmitData(false,false,false,false);
+	Material::projMatrix = camera->GetProjMatrix();
+	Material::viewMatrix = camera->GetViewMatrix();
+
+	auto skyboxTex = camera->gameObject->GetComponent<Skybox>()->skyboxTexture.lock();
+	Importer::MaterialSet["CombineMaterial"]->SetTexture("cubeTex", skyboxTex);
+
+	Importer::MaterialSet["CombineMaterial"]->SubmitData(false, true, true, false);
 	Importer::MeshSet["Plane"]->Draw();
 }
 

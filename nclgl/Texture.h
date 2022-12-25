@@ -4,19 +4,34 @@
 
 typedef void (*GenerateFunc) (int, int, GLuint*, GLenum);
 
-class Texture2D {
+class Texture {
 public:
-	Texture2D() { texture = 0; }
+	Texture() = default;
+	~Texture() {}
 
-	Texture2D(const GLuint &tex) { texture = tex; }
-	void operator=(const GLuint &tex) { texture = tex; }
-
-	~Texture2D() {}
 	void Delete() { glDeleteTextures(1, &texture); }
-	void Submit(Shader* targetShader, const std::string& variableName, int layer);
+	virtual void Submit(Shader* targetShader, const std::string& variableName, int layer) = 0;
 
 protected:
-	GLuint texture;
+	GLuint texture = 0;
+};
+
+class Texture2D: public Texture {
+public:
+	Texture2D() = default;
+	Texture2D(const GLuint& tex) { texture = tex; }
+
+	~Texture2D() {}
+	void Submit(Shader* targetShader, const std::string& variableName, int layer) override;
+};
+
+class TextureCube : public Texture {
+public:
+	TextureCube() = default;
+	TextureCube(const GLuint& tex) { texture = tex; }
+
+	~TextureCube() {}
+	void Submit(Shader* targetShader, const std::string& variableName, int layer) override;
 };
 
 enum class BufferType {
@@ -30,14 +45,4 @@ public:
 	BufferType bufferType;
 	int width = 0;
 	int height = 0;
-};
-
-class TextureCube {
-public:
-	GLuint upTex;
-	GLuint downTex;
-	GLuint leftTex;
-	GLuint rightTex;
-	GLuint frontTex;
-	GLuint backTex;
 };

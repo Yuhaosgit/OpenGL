@@ -1,21 +1,16 @@
 #include "Skybox.h"
-#include "Mesh.h"
-#include "Material.h"
 #include "Importer.h"
 
+#define Path "../Skybox/"
+
 const std::string Skybox::Type = "SkyBox";
-std::weak_ptr<Skybox> Skybox::skyBox;
 
-void Skybox::AddInstance(std::shared_ptr<Component> component) {
-	skyBox = std::dynamic_pointer_cast<Skybox>(component);
+Skybox::Skybox(const std::string& fileName) {
+	auto texName = Importer::LoadCubemap(Path + fileName);
+	skyboxTexture = std::dynamic_pointer_cast<TextureCube>(Importer::TextureSet[texName]);
 }
 
-Skybox::Skybox() {
-	mesh = Importer::MeshSet["Plane"];
-}
-
-
-void Skybox::Render() {
-	material.lock()->SubmitData();
-	mesh.lock()->Draw();
+Skybox::Skybox(std::shared_ptr<TextureCube> cubeMap)
+{
+	skyboxTexture = cubeMap;
 }

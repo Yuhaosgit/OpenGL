@@ -29,7 +29,7 @@ public:
 	void SetVector4(std::string name, const Vector4& vec);
 
 	void SetMatrix4(std::string name, const Matrix4& mat4);
-	void SetTexture2D(std::string name, Texture2D tex);
+	void SetTexture(std::string name, std::shared_ptr<Texture> tex);
 
 	void SubmitData(bool sendModelMat = true, bool sendViewMat = true, bool sendProjMat = true, bool sendShadowMat = true);
 
@@ -54,7 +54,7 @@ private:
 
 	std::unordered_map<std::string, Matrix4> MatrixSet;
 
-	std::unordered_map<std::string, Texture2D> TextureSet;
+	std::unordered_map<std::string, std::weak_ptr<Texture>> TextureSet;
 
 	void SubmitFloatDataSet();
 	void SubmitIntDataSet();

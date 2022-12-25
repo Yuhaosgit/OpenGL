@@ -69,7 +69,6 @@ class DirectLightPass :public RenderPassPrototype {
 	void RenderAfterSet() override;
 };
 
-//screen render features
 class CombinePass :public RenderPassPrototype {
 	friend class RenderPass<CombinePass>;
 

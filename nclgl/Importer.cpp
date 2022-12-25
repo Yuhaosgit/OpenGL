@@ -7,13 +7,14 @@
 #include <iostream>
 #include <filesystem>
 #include <gli/gli.hpp>
+#include <stb_image.h>
 #include <algorithm>
 
 #define Path "../Prefab/"
 
 std::unordered_map<std::string, std::shared_ptr<Mesh>> Importer::MeshSet;
 std::unordered_map<std::string, Shader*> Importer::ShaderSet;
-std::unordered_map<std::string, Texture2D> Importer::TextureSet;
+std::unordered_map<std::string, std::shared_ptr<Texture>> Importer::TextureSet;
 std::unordered_map<std::string, std::shared_ptr<Material>> Importer::MaterialSet;
 std::unordered_map<std::string, std::shared_ptr<Prefab>> Importer::PrefabSet;
 std::set<std::string> Importer::ShaderFiles;
@@ -29,7 +30,7 @@ void Importer::ReleaseAllResources() {
 	ShaderFiles.clear();
 
 	for (auto& texture : TextureSet) {
-		texture.second.Delete();
+		texture.second->Delete();
 	}
 	TextureSet.clear();
 	PrefabSet.clear();
@@ -298,8 +299,64 @@ std::string Importer::LoadTexture(const std::string& fileName) {
 			}
 	glBindTexture(GL_TEXTURE_2D, 0);
 	std::string name = fileName.substr(fileName.find_last_of("\\") + 1);
-	TextureSet[name] = TextureName;
+
+	if (Texture.target() == gli::texture::target_type::TARGET_CUBE) {
+		TextureSet[name] = std::make_shared<TextureCube>(TextureName);
+	}
+	else if (Texture.target() == gli::texture::target_type::TARGET_2D) {
+		TextureSet[name] = std::make_shared<Texture2D>(TextureName);
+	}
+
     return name;
+}
+
+std::string Importer::LoadCubemap(const std::string& fileName) {
+	std::vector<std::string> fileNames;
+	fileNames.emplace_back(FindFile(fileName, "Left"));
+	fileNames.emplace_back(FindFile(fileName, "Right"));
+	fileNames.emplace_back(FindFile(fileName, "Up"));
+	fileNames.emplace_back(FindFile(fileName, "Down"));
+	fileNames.emplace_back(FindFile(fileName, "Front"));
+	fileNames.emplace_back(FindFile(fileName, "Back"));
+
+	GLuint axis[6] = {
+	GL_TEXTURE_CUBE_MAP_POSITIVE_X,GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Y,GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Z,GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+
+	GLuint cubeTex;
+	glGenTextures(1, &cubeTex);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
+
+	GLubyte* imagedata = nullptr;
+	int width, height, channels;
+
+	for (int i = 0; i < 6; ++i) {
+		//load image information
+		imagedata = stbi_load(fileNames[i].c_str(), &width, &height, &channels, 0);
+		//test if load succeed
+		if (!imagedata) {
+			std::cout << "Load Image Fail!\n";
+			cubeTex = 0;
+			return 0;
+		}
+		glTexImage2D(axis[i], 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, imagedata);
+
+		stbi_image_free(imagedata);
+	}
+
+	//set texture attributes
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	std::string name = fileName.substr(fileName.find_last_of("\\") + 1);
+	TextureSet[name] = std::make_shared<TextureCube>(cubeTex);
+	return name;
 }
 
 Material* Importer::ConstructMaterial(std::vector<std::string>& textures, Shader* shader) {
@@ -312,16 +369,16 @@ Material* Importer::ConstructMaterial(std::vector<std::string>& textures, Shader
 			c = tolower(c);
 
 		if (texture.find("color") != std::string::npos) {
-			material->SetTexture2D("diffuseTex", Importer::TextureSet[textures[i]]);
+			material->SetTexture("diffuseTex", Importer::TextureSet[textures[i]]);
 		}
 		else if (texture.find("normal") != std::string::npos) {
-			material->SetTexture2D("normalTex", Importer::TextureSet[textures[i]]);
+			material->SetTexture("normalTex", Importer::TextureSet[textures[i]]);
 		}
 		else if (texture.find("metallic") != std::string::npos) {
-			material->SetTexture2D("metallicTex", Importer::TextureSet[textures[i]]);
+			material->SetTexture("metallicTex", Importer::TextureSet[textures[i]]);
 		}
 		else if (texture.find("roughness") != std::string::npos) {
-			material->SetTexture2D("roughnessTex", Importer::TextureSet[textures[i]]);
+			material->SetTexture("roughnessTex", Importer::TextureSet[textures[i]]);
 		}
 	}
 	return material;

@@ -36,15 +36,16 @@ private:
 public:
 	static void ReleaseAllResources();
 
-	static std::unordered_map<std::string, std::shared_ptr<Mesh>> MeshSet;
 	static std::unordered_map<std::string, Shader*> ShaderSet;
+	static std::unordered_map<std::string, std::shared_ptr<Mesh>> MeshSet;
 	static std::unordered_map<std::string, std::shared_ptr<Material>> MaterialSet;
-	static std::unordered_map<std::string, Texture2D> TextureSet;
+	static std::unordered_map<std::string, std::shared_ptr<Texture>> TextureSet;
 	static std::unordered_map<std::string, std::shared_ptr<Prefab>> PrefabSet;
 
 	static void LoadPrefab(const std::string& file);
 
 	static std::string LoadTexture(const std::string& fileName);
+	static std::string LoadCubemap(const std::string& fileName);
 
 	static void LoadShader(const std::string& name, const std::string& vertex, const std::string& fragment,
 		const std::string& geometry="", const std::string& domain = "", const std::string& hull = "");

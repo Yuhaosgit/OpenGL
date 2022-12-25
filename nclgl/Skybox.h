@@ -3,26 +3,16 @@
 #include "Component.h"
 #include "Texture.h"
 
-class Mesh;
-class Material;
-
 class Skybox :public Component {
-	void AddInstance(std::shared_ptr<Component> component);
-	static std::weak_ptr<Skybox> skyBox;
+public:
+	void AddInstance(std::shared_ptr<Component> component) {}
 
 	static const std::string Type;
 	std::string GetType() override { return Type; }
 
-	Skybox();
-	void Render();
-private:
-	Texture2D upTex;
-	Texture2D downTex;
-	Texture2D leftTex;
-	Texture2D rightTex;
-	Texture2D frontTex;
-	Texture2D backTex;
+	Skybox() = delete;
+	Skybox(const std::string& fileName);
+	Skybox(std::shared_ptr<TextureCube> cubeMap);
 
-	std::weak_ptr<Material> material;
-	std::weak_ptr<Mesh> mesh;
+	std::weak_ptr<TextureCube> skyboxTexture;
 };

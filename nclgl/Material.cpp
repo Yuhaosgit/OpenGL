@@ -52,7 +52,7 @@ void Material::SubmitMatrixSet(bool sendModelMat, bool sendViewMat, bool sendPro
 void Material::SubmitTextureSet() {
 	int i = 0;
 	for (auto& data : TextureSet) {
-		data.second.Submit(shader, data.first, i);
+		data.second.lock()->Submit(shader, data.first, i);
 		i++;
 	}
 }
@@ -85,7 +85,7 @@ void Material::SetMatrix4(std::string name, const Matrix4& mat4) {
 	MatrixSet[name] = mat4;
 }
 
-void Material::SetTexture2D(std::string name, Texture2D tex) {
+void Material::SetTexture(std::string name, std::shared_ptr<Texture> tex) {
 	TextureSet[name] = tex;
 }
 
