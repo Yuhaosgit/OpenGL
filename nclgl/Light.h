@@ -36,7 +36,8 @@ public:
 	float range;
 
 	bool shadowOpen = false;
-	Matrix4 shadowMatrix;
+	Matrix4 lightViewMatrix;
+	Matrix4 lightProjMatrix;
 	std::vector<std::weak_ptr<MeshRender>> shadowList;
 
 	std::weak_ptr<Material> material;

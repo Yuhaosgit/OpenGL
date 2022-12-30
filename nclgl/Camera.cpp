@@ -63,11 +63,9 @@ void Camera::UpdateList() {
 				auto transform = light.lock()->gameObject->GetComponent<Transform>();
 				auto direction = transform->GetRotate().RotationMatrix().Forward();
 
-				Matrix4 lightProjectjMatrix = Matrix4::Orthographic(0.1, 200, 100, -100, 100, -100);
-				Matrix4 lightViewMatrix = Matrix4::BuildViewMatrix(direction * 100, Vector3(0, 0, 0));
+				light.lock()->lightProjMatrix = Matrix4::Orthographic(0.1, 100, 50, -50, 50, -50);
+				light.lock()->lightViewMatrix = Matrix4::BuildViewMatrix(direction * 50, Vector3(0, 0, 0));
 			
- 				light.lock()->shadowMatrix = lightProjectjMatrix * lightViewMatrix;
-
 				for (int i = 1; i < MeshRender::meshRenders.size(); ++i) {
 					light.lock()->shadowList.emplace_back(MeshRender::meshRenders[i]);
 				}

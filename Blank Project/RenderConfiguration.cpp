@@ -4,7 +4,6 @@
 
 #include "Renderer.h"
 #include "PositionData.h"
-#include "../nclgl/TextureLoader.h"
 
 Renderer::~Renderer() {
 	Importer::ReleaseAllResources();
@@ -150,7 +149,7 @@ void Renderer::SetEnvironment() {
 	auto CreateLights = [&]() {
 		auto directLight = Instantiate(std::make_shared<Light>());
 		directLight->GetComponent<Light>()->shadowOpen = true;
-		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(45, 30, 0));
+		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(45, -70, 0));
 	};
 
 	CreateGround();

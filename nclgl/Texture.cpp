@@ -12,9 +12,25 @@ void TextureCube::Submit(Shader* targetShader, const std::string& variableName, 
 	glUniform1i(glGetUniformLocation(targetShader->GetProgram(), variableName.c_str()), layer);
 }
 
-bool RenderTexture::Generate(GLenum attatchment, GenerateFunc generateFunc, int width_, int height_) {
+bool RenderTexture::Generate(GLenum attatchment, GenerateFunc generateFunc, int width_, int height_, GLuint in_frameBuffer) {
 	width = width_;
 	height = height_;
+
+	frameBuffer = in_frameBuffer;
+
+	if (attatchment >= GL_COLOR_ATTACHMENT0 && attatchment <= GL_COLOR_ATTACHMENT31) {
+		format = RenderTextureFormat::COLOR;
+	}
+	else if (attatchment == GL_DEPTH_ATTACHMENT) {
+		format = RenderTextureFormat::DEPTH;
+	}
+	else if (attatchment == GL_STENCIL_ATTACHMENT) {
+		format = RenderTextureFormat::STENCIL;
+	}
+	else if (attatchment == GL_DEPTH24_STENCIL8 || attatchment == GL_DEPTH_STENCIL) {
+		format = RenderTextureFormat::STENCIL_DEPTH;
+	}
+
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 

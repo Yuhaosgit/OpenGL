@@ -6,26 +6,16 @@ void FrameBufferPrototype::BindFrameBuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 }
 
-void CopyRenderTexture(RenderTexture* read, RenderTexture* draw, BufferType bufferType) {
+void CopyRenderTexture(std::shared_ptr<RenderTexture> read, std::shared_ptr<RenderTexture> draw, RenderTextureFormat RenderTextureFormat) {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, read->frameBuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw->frameBuffer);
-	if (read->bufferType != draw->bufferType) {
-		throw("Can not copy different type buffer");
-		return;
-	}
-
-	if ((read->bufferType == BufferType::COLOR && bufferType != BufferType::COLOR)|| 
-		(read->bufferType != BufferType::COLOR && bufferType == BufferType::COLOR)) {
-		throw("This buffer does not exist");
-		return;
-	}
 
 	GLuint buffer = 0;
-	if (bufferType == BufferType::COLOR)
+	if (RenderTextureFormat == RenderTextureFormat::COLOR)
 		buffer = GL_COLOR_BUFFER_BIT;
-	else if (bufferType == BufferType::DEPTH)
+	else if (RenderTextureFormat == RenderTextureFormat::DEPTH)
 		buffer = GL_DEPTH_BUFFER_BIT;
-	else if (bufferType == BufferType::STENCIL)
+	else if (RenderTextureFormat == RenderTextureFormat::STENCIL)
 		buffer = GL_STENCIL_BUFFER_BIT;
 
 	glBlitFramebuffer(0, 0, read->width, read->height, 0, 0, draw->width, draw->height, buffer, GL_NEAREST);
@@ -39,8 +29,7 @@ void ShadowFBO::GenerateFrameBuffer() {
 	//lighting buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = depthTarget->Generate(0, GenerateShadowTexture, ShadowMapSize, ShadowMapSize);
-	glDrawBuffer(GL_NONE);
+	initFlag = depthTarget->Generate(0, GenerateDepthTexture, ShadowMapSize, ShadowMapSize, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -71,9 +60,9 @@ void GeometryFBO::GenerateFrameBuffer() {
 	glGenFramebuffers(1, &frameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthTexture, width, height);
-	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height);
-	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height);
+	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
+	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -102,9 +91,9 @@ void DecalFBO::GenerateFrameBuffer() {
 	//lighting buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height);
-	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height);
-	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthTexture, width, height);
+	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -142,9 +131,9 @@ void LightFBO::GenerateFrameBuffer() {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = diffuseTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height);
-	initFlag = specularTareget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height);
-	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthTexture, width, height);
+	initFlag = diffuseTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = specularTareget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -157,30 +146,8 @@ void LightFBO::GenerateFrameBuffer() {
 }
 
 void LightFBO::ClearBuffer() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-
-//void LightFBO::RenderPreset() {
-//	glEnable(GL_BLEND);
-//	glBlendFunc(GL_ONE, GL_ONE);
-//
-//	glStencilMask(0xFF);
-//
-//	glDepthMask(GL_FALSE);
-//}
-//
-//void LightFBO::RenderAfterSet() {
-//	glDepthFunc(GL_LESS);
-//	glDepthMask(GL_TRUE);
-//
-//	glCullFace(GL_BACK);
-//
-//	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-//
-//	glDisable(GL_BLEND);
-//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//}
-//
 #pragma endregion
 
 #pragma region OITFBO
@@ -193,9 +160,9 @@ void OITFBO::GenerateFrameBuffer() {
 	//lighting buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = accumulationTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateAccumulationTexture, width, height);
-	initFlag = revealTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateRevealTexture, width, height);
-	initFlag = depthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthTexture, width, height);
+	initFlag = accumulationTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateAccumulationTexture, width, height, frameBuffer);
+	initFlag = revealTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateRevealTexture, width, height, frameBuffer);
+	initFlag = depthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -242,7 +209,7 @@ void OutcomeFBO::GenerateFrameBuffer() {
 	//lighting buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height);
+	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -255,18 +222,4 @@ void OutcomeFBO::GenerateFrameBuffer() {
 void OutcomeFBO::ClearBuffer() {
 	glClear(GL_COLOR_BUFFER_BIT);
 }
-
-//void OutcomeFBO::CombineTransparent() {
-//	Renderer* renderer = Renderer::instance();
-//
-//	renderer->BindShader(combineTransparentShader.get());
-//	renderer->UpdateShaderMatrices(true);
-//
-//	renderer->transparentBuffer->accumulationTarget.Submit(combineTransparentShader.get(), "accumulationTex", 0);
-//	renderer->transparentBuffer->revealTarget.Submit(combineTransparentShader.get(), "revealTex", 1);
-//	renderer->gBuffer->stencilDepthTarget.Submit(combineTransparentShader.get(), "opaqueDepthTex", 2);
-//	renderer->transparentBuffer->depthTarget.Submit(combineTransparentShader.get(), "transparentDepthTex", 3);
-//
-//	renderer->quad->Draw();
-//}
 #pragma endregion

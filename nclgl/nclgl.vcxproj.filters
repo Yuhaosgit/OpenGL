@@ -35,9 +35,6 @@
     <ClCompile Include="ShaderLoader.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
-    <ClCompile Include="TextureLoader.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
     <ClCompile Include="Light.cpp">
       <Filter>Component\Light</Filter>
     </ClCompile>
@@ -139,9 +136,6 @@
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="ShaderLoader.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="TextureLoader.h">
       <Filter>Resources</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">

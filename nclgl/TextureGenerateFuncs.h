@@ -4,11 +4,23 @@
 #pragma region TextureGeneration
 void GenerateShadowTexture(int width, int height, GLuint* texture, GLenum attatchment) {
 	glTexImage2D
+	(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attatchment, GL_TEXTURE_2D, *texture, 0);
+}
+
+void GenerateStencilTexture(int width, int height, GLuint* texture, GLenum attatchment) {
+	glTexImage2D
+	(GL_TEXTURE_2D, 0, GL_STENCIL_ATTACHMENT, width, height, 0, GL_STENCIL_ATTACHMENT, GL_UNSIGNED_INT, NULL);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, *texture, 0);
+}
+
+void GenerateDepthTexture(int width, int height, GLuint* texture, GLenum attatchment) {
+	glTexImage2D
 	(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *texture, 0);
 }
 
-void GenerateDepthTexture(int width, int height, GLuint* texture, GLenum attatchment) {
+void GenerateDepthStencilTexture(int width, int height, GLuint* texture, GLenum attatchment) {
 	glTexImage2D
 	(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *texture, 0);

@@ -16,7 +16,7 @@ out vec4 fragColour;
 
 void main(void) {
 	float depthVal = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r;
-	if (depthVal == 1) {
+	if (depthVal == 1.000) {
 		fragColour = texture(cubeTex, normalize(IN.viewDir));
 	}
 
@@ -25,9 +25,8 @@ void main(void) {
 		vec3 light = texture(diffuseLight, IN.texCoord).xyz;
 		vec3 specular = texture(specularLight, IN.texCoord).xyz;
 
-		fragColour.xyz = diffuse * 0.0; // ambient
-		fragColour.xyz += diffuse * light; // lambert
-		fragColour.xyz += specular; // Specular
+		fragColour.xyz = diffuse * light;
+		fragColour.xyz += specular;
 		fragColour.a = 1.0;
 	}
 }

@@ -2,6 +2,7 @@
 #include "OGLRenderer.h"
 #include "Material.h"
 #include <memory>
+#include <functional>
 
 #define ShadowMapSize 2048
 
@@ -28,7 +29,8 @@ public:
 		ClearBuffer();
 	}
 
-	friend void CopyRenderTexture(RenderTexture* read, RenderTexture* draw, BufferType bufferType);
+	friend void CopyRenderTexture
+	(std::shared_ptr<RenderTexture> read, std::shared_ptr<RenderTexture> draw, RenderTextureFormat bufferType);
 protected:
 	FrameBufferPrototype() = default;
 
@@ -48,6 +50,7 @@ public:
 private:
 	ShadowFBO() {
 		depthTarget = std::make_shared<RenderTexture>();
+
 		GenerateFrameBuffer();
 	}
 	~ShadowFBO() {}

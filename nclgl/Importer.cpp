@@ -1,13 +1,11 @@
 #include "Importer.h"
 #include "ShaderLoader.h"
 #include "Material.h"
-#include "TextureLoader.h"
 #include "Mesh.h"
 #include <ctime>
 #include <iostream>
 #include <filesystem>
 #include <gli/gli.hpp>
-#include <stb_image.h>
 #include <algorithm>
 
 #define Path "../Prefab/"
@@ -324,25 +322,33 @@ std::string Importer::LoadCubemap(const std::string& fileName) {
 	GL_TEXTURE_CUBE_MAP_POSITIVE_Y,GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 	GL_TEXTURE_CUBE_MAP_POSITIVE_Z,GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-	GLuint cubeTex;
+	GLuint cubeTex = 0;
 	glGenTextures(1, &cubeTex);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
 
-	GLubyte* imagedata = nullptr;
-	int width, height, channels;
-
 	for (int i = 0; i < 6; ++i) {
 		//load image information
-		imagedata = stbi_load(fileNames[i].c_str(), &width, &height, &channels, 0);
+		gli::texture tex = (gli::load(fileNames[i]));
+		gli::gl GL(gli::gl::PROFILE_GL33);
+		gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
+		GLenum Target = GL.translate(tex.target());
+		glm::tvec3<GLsizei> const Extent(tex.extent());
+
 		//test if load succeed
-		if (!imagedata) {
+		if (tex.empty()) {
 			std::cout << "Load Image Fail!\n";
 			cubeTex = 0;
-			return 0;
+			return "Image load error";
 		}
-		glTexImage2D(axis[i], 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, imagedata);
 
-		stbi_image_free(imagedata);
+		glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(tex.levels() - 1));
+		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_R, Format.Swizzles[0]);
+		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_G, Format.Swizzles[1]);
+		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_B, Format.Swizzles[2]);
+		glTexParameteri(Target, GL_TEXTURE_SWIZZLE_A, Format.Swizzles[3]);
+
+		glCompressedTexImage2D(axis[i], 0, Format.Internal, Extent.x, Extent.y, 0, (GLsizei)tex.size(0), tex.data(0, 0, 0));
 	}
 
 	//set texture attributes

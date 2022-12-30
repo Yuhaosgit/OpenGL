@@ -34,15 +34,17 @@ public:
 	void Submit(Shader* targetShader, const std::string& variableName, int layer) override;
 };
 
-enum class BufferType {
+enum class RenderTextureFormat {
 	COLOR, DEPTH, STENCIL, STENCIL_DEPTH
 };
 
 class RenderTexture: public Texture2D {
 public:
-	bool Generate(GLenum attatchment, GenerateFunc generateFunc, int width, int height);
+	bool Generate(GLenum attatchment, GenerateFunc generateFunc, int width, int height, GLuint in_frameBuffer);
+
 	GLuint frameBuffer;
-	BufferType bufferType;
+	RenderTextureFormat format;
+
 	int width = 0;
 	int height = 0;
 };
