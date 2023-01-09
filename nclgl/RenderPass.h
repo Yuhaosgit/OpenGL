@@ -11,6 +11,11 @@ public:
 			target = new T();
 		target->Pass(camera);
 	}
+	static T* Instance() {
+		if (target == nullptr)
+			target = new T();
+		return target;
+	}
 private:
 	static T* target;
 };
@@ -73,6 +78,15 @@ class CombinePass :public RenderPassPrototype {
 	friend class RenderPass<CombinePass>;
 
 	CombinePass() = default;
+	void RenderPreset() override;
+	void RenderFunction(Camera* camera) override;
+	void RenderAfterSet() override;
+};
+
+class EnvironmentDiffusePass :public RenderPassPrototype {
+	friend class RenderPass<EnvironmentDiffusePass>;
+
+	EnvironmentDiffusePass() = default;
 	void RenderPreset() override;
 	void RenderFunction(Camera* camera) override;
 	void RenderAfterSet() override;

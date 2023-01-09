@@ -1,6 +1,6 @@
 #pragma once
 #include <unordered_map>
-#include "../nclgl/OGLRenderer.h"
+#include "OGLRenderer.h"
 
 enum ShaderStages {
 	Vertex,

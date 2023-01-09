@@ -1,8 +1,16 @@
+/*
+Part of Newcastle University's Game Engineering source code.
+
+Use as you see fit!
+
+Comments and queries to: richard-gordon.davison AT ncl.ac.uk
+https://research.ncl.ac.uk/game/
+*/
 #include "GameTimer.h"
 
-GameTimer::GameTimer(void)	{
-	firstPoint	= std::chrono::high_resolution_clock::now();
-	nowPoint	= firstPoint;
+GameTimer::GameTimer(void) {
+	firstPoint = std::chrono::high_resolution_clock::now();
+	nowPoint = firstPoint;
 	Tick();
 }
 

@@ -2,6 +2,7 @@
 #include "FrameBuffer.h"
 #include "GameObject.h"
 #include "Importer.h"
+#include "Skybox.h"
 
 #pragma region ShadowPass
 void ShadowPass::RenderPreset() {
@@ -26,7 +27,7 @@ void ShadowPass::RenderFunction(Camera* camera) {
 }
 
 void ShadowPass::RenderAfterSet() {
-	glViewport(0, 0, OGLRenderer::GetWidth(), OGLRenderer::GetHeight());
+	glViewport(0, 0, OGLRenderer::GetCurrentWidth(), OGLRenderer::GetCurrentHeight());
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glCullFace(GL_BACK);
 }
@@ -102,15 +103,19 @@ void DirectLightPass::RenderFunction(Camera* camera) {
 
 		auto lightMat = light.lock()->material.lock();
 
-		lightMat->SetVector2("pixelSize", Vector2(1.0f / OGLRenderer::GetWidth(), 1.0f / OGLRenderer::GetHeight()));
+		lightMat->SetVector2("pixelSize", Vector2(1.0f / camera->width, 1.0f / camera->height));
 		lightMat->SetVector3("cameraPos", camera->gameObject->GetComponent<Transform>()->GetPosition());
 		lightMat->SetMatrix4("inverseProjView", (camera->GetProjMatrix() * camera->GetViewMatrix()).Inverse());
 
-		lightMat->SetVector4("lightColour", light.lock()->color);
+		lightMat->SetFloat("lightWidth", light.lock()->lightWidth);
+		lightMat->SetFloat("nearPlane", light.lock()->nearPlane);
 
+		lightMat->SetFloat("lightIntensity", light.lock()->intensity);
+		lightMat->SetVector4("lightColour", light.lock()->color);
 		auto direct = light.lock()->gameObject->GetComponent<Transform>()->GetRotate().RotationMatrix();
 		lightMat->SetVector3("lightOrientation", Vector3(direct.values[2], direct.values[6], direct.values[10]));
-		lightMat->SetMatrix4("lightViewMatrix", light.lock()->lightViewMatrix);
+
+		lightMat->SetTexture("enviDiffuseTex", Importer::GetTexture("EnviDiffuse"));
 
 		Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
 		light.lock()->Render();
@@ -139,14 +144,60 @@ void CombinePass::RenderFunction(Camera* camera) {
 	Material::projMatrix = camera->GetProjMatrix();
 	Material::viewMatrix = camera->GetViewMatrix();
 
-	auto skyboxTex = camera->gameObject->GetComponent<Skybox>()->skyboxTexture.lock();
-	Importer::MaterialSet["CombineMaterial"]->SetTexture("cubeTex", skyboxTex);
+	auto skyboxTex = Skybox::skyboxTexture.lock();
+	Importer::GetMaterial("CombineMaterial")->SetTexture("cubeTex", skyboxTex);
 
-	Importer::MaterialSet["CombineMaterial"]->SubmitData(false, true, true, false);
-	Importer::MeshSet["Plane"]->Draw();
+	Importer::GetMaterial("CombineMaterial")->SubmitData(false, true, true, false);
+	Importer::GetMesh("Plane")->Draw();
 }
 
 void CombinePass::RenderAfterSet() {
 	glDepthFunc(GL_LESS);
+}
+#pragma endregion
+
+#pragma region Environment Diffuse
+void EnvironmentDiffusePass::RenderPreset() {
+	auto indirectDiffuseBuffer = FrameBuffer<IndirectDiffuseFBO>().instance();
+	indirectDiffuseBuffer->Bind();
+
+	int size = indirectDiffuseBuffer->cubemapResolution;
+	glViewport(0, 0, size, size);
+}
+
+void EnvironmentDiffusePass::RenderFunction(Camera* camera) {
+	Matrix4 captureViews[] =
+	{
+	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(1.0f,  0.0f,  0.0f),Vector3(0.0f, -1.0f,  0.0f)),
+	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(-1.0f,  0.0f,  0.0f), Vector3(0.0f, -1.0f,  0.0f)),
+	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  1.0f,  0.0f), Vector3(0.0f,  0.0f,  1.0f)),
+	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, -1.0f,  0.0f), Vector3(0.0f,  0.0f, -1.0f)),
+	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f,  1.0f), Vector3(0.0f, -1.0f,  0.0f)),
+	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f, -1.0f), Vector3(0.0f, -1.0f,  0.0f))
+	};
+
+	auto mat = Importer::GetMaterial("IndirectDiffuseMaterial");
+	mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
+
+	auto indirectDiffuseBuffer = FrameBuffer<IndirectDiffuseFBO>().instance();
+
+	Material::projMatrix = camera->GetProjMatrix();
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		Material::viewMatrix = captureViews[i];
+		camera->UpdateList();
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, indirectDiffuseBuffer->indirectDiffuse->texture, 0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		Importer::GetMaterial("IndirectDiffuseMaterial")->SubmitData(false, true, true, false);
+		Importer::GetMesh("Plane")->Draw();
+	}
+}
+
+void EnvironmentDiffusePass::RenderAfterSet() {
+
 }
 #pragma endregion

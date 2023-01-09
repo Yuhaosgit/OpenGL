@@ -111,13 +111,11 @@ private:
 class LightFBO :public FrameBufferPrototype {
 	friend class FrameBuffer<LightFBO>;
 public:
-	std::shared_ptr<RenderTexture> diffuseTarget;
-	std::shared_ptr<RenderTexture> specularTareget;
+	std::shared_ptr<RenderTexture> PBRTarget;
 	std::shared_ptr<RenderTexture> stencilDepthTarget;
 private:
 	LightFBO() {
-		diffuseTarget = std::make_shared<RenderTexture>();
-		specularTareget = std::make_shared<RenderTexture>();
+		PBRTarget = std::make_shared<RenderTexture>();
 		stencilDepthTarget = std::make_shared<RenderTexture>();
 
 		GenerateFrameBuffer();
@@ -159,6 +157,23 @@ private:
 		GenerateFrameBuffer();
 	}
 	~OutcomeFBO() {}
+
+	void GenerateFrameBuffer() override;
+	void ClearBuffer() override;
+};
+
+class IndirectDiffuseFBO :public FrameBufferPrototype {
+	friend class FrameBuffer<IndirectDiffuseFBO>;
+public:
+	std::shared_ptr<RenderTexture> indirectDiffuse;
+	int cubemapResolution = 128;
+private:
+	IndirectDiffuseFBO() {
+		indirectDiffuse = std::make_shared<RenderTexture>();
+
+		GenerateFrameBuffer();
+	}
+	~IndirectDiffuseFBO() {}
 
 	void GenerateFrameBuffer() override;
 	void ClearBuffer() override;

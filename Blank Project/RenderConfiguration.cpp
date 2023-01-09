@@ -4,11 +4,7 @@
 
 #include "Renderer.h"
 #include "PositionData.h"
-
-Renderer::~Renderer() {
-	Importer::ReleaseAllResources();
-	delete root;
-}
+#include "../nclgl/Skybox.h"
 
 GameObject* Renderer::Instantiate(std::shared_ptr<Prefab> prefab, Vector3 position, GameObject* parent) {
 	GameObject* instance = new GameObject();
@@ -66,94 +62,105 @@ void Renderer::Initialize() {
 	auto ImportPrefab = []() {
 		Importer::LoadPrefab("Cube");
 		Importer::LoadPrefab("Plane");
+		Importer::LoadPrefab("Sphere");
 		Importer::LoadPrefab("Pegasus statue");
+		Importer::LoadPrefab("Lion");
 	};
 
 	auto ImportShader = []() {
 		Importer::LoadShader("Shadow", "ShadowVertex.glsl", "ShadowFragment.glsl");
 		Importer::LoadShader("Combine", "CombineVertex.glsl", "CombineFragment.glsl");
-		Importer::LoadShader("OIT", "CombineVertex.glsl", "OITFragment.glsl");
-		Importer::LoadShader("Present", "CombineVertex.glsl", "PresentFragment.glsl");
-		Importer::LoadShader("Water", "Water_vertex.glsl", "Water_fragment.glsl");
-		Importer::LoadShader("Decal", "UnlitVertex.glsl", "UnlitFragment.glsl");
 		Importer::LoadShader("DirectLight", "CombineVertex.glsl", "DirectLightFragment.glsl");
-		Importer::LoadShader("PointLight", "UnlitVertex.glsl", "PointLightFragment.glsl");
 		Importer::LoadShader("Gbuffer", "DefaultGbufferVertex.glsl", "DefaultGbufferFragment.glsl");
 		Importer::LoadShader("Debug", "DebugVertex.glsl", "DebugFragment.glsl");
+		Importer::LoadShader("IBL", "IBLVertex.glsl", "IBLFragment.glsl");
+	};
+
+	auto ImportBakedTexture = []() {
+		Importer::LoadCubemap("..\\Baked\\EnviDiffuse");
 	};
 
 	auto CreateCommonMaterial = []() {
 		auto shadowMatertial = std::make_shared<Material>();
-		shadowMatertial->shader = Importer::ShaderSet["Shadow"];
+		shadowMatertial->shader = Importer::GetShader("Shadow");
 		Importer::SetMaterial("ShadowMaterial", shadowMatertial);
 
-		//auto decalMaterial = std::make_shared<Material>();
-		//decalMaterial->shader = Importer::ShaderSet["Decal"];
-		//decalMaterial->SetTexture("stencilDepthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
-		//decalMaterial->SetTexture("normals", FrameBuffer<GeometryFBO>::instance()->normalTarget);
-		//decalMaterial->SetTexture("targetTex", Importer::TextureSet["doge.png"]);
-		//decalMaterial->SetTexture("targetNormalTex", Importer::TextureSet["dogeNormal.png"]);
-		//Importer::SetMaterial("DecalMaterial", decalMaterial);
-
 		auto directLightMaterial = std::make_shared<Material>();
-		directLightMaterial->shader = Importer::ShaderSet["DirectLight"];
-		directLightMaterial->SetTexture("normTex", FrameBuffer<GeometryFBO>::instance()->normalTarget);
+		directLightMaterial->shader = Importer::GetShader("DirectLight");
+		directLightMaterial->SetTexture("ColorRoughnessTex", FrameBuffer<GeometryFBO>::instance()->colorTarget);
+		directLightMaterial->SetTexture("normalMetallicTex", FrameBuffer<GeometryFBO>::instance()->normalTarget);
 		directLightMaterial->SetTexture("depthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
 		directLightMaterial->SetTexture("shadowTex", FrameBuffer<ShadowFBO>::instance()->depthTarget);
 		Importer::SetMaterial("DirectLightMaterial", directLightMaterial);
 
-		auto pointLightMaterial = std::make_shared<Material>();
-		pointLightMaterial->shader = Importer::ShaderSet["PointLight"];
-		pointLightMaterial->SetTexture("normTex", FrameBuffer<GeometryFBO>::instance()->normalTarget);
-		pointLightMaterial->SetTexture("depthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
-		Importer::SetMaterial("PointLightMaterial", pointLightMaterial);
-
 		auto combineMaterial = std::make_shared<Material>();
-		combineMaterial->shader = Importer::ShaderSet["Combine"];
-		combineMaterial->SetTexture("diffuseTex", FrameBuffer<GeometryFBO>::instance()->colorTarget);
-		combineMaterial->SetTexture("diffuseLight", FrameBuffer<LightFBO>::instance()->diffuseTarget);
-		combineMaterial->SetTexture("specularLight", FrameBuffer<LightFBO>::instance()->specularTareget);
+		combineMaterial->shader = Importer::GetShader("Combine");
+		combineMaterial->SetTexture("directLightTex", FrameBuffer<LightFBO>::instance()->PBRTarget);
 		combineMaterial->SetTexture("depthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
 		Importer::SetMaterial("CombineMaterial", combineMaterial);
+
+		auto indirectDiffuseMaterial = std::make_shared<Material>();
+		indirectDiffuseMaterial->shader = Importer::GetShader("IBL");
+		Importer::SetMaterial("IndirectDiffuseMaterial", indirectDiffuseMaterial);
 	};
 
 	ImportPrefab();
 	ImportShader();
+	ImportBakedTexture();
 	CreateCommonMaterial();
 }
 
 void Renderer::SetEnvironment() {
 	auto CreateDefaultCamera = [&]() {
-		camera = std::make_shared<Camera>();
+ 		camera = std::make_shared<Camera>();
 		GameObject* mainCamera = Instantiate(camera);
 
 		std::shared_ptr<CameraMove> FPSMove = std::make_shared<CameraMove>();
 		mainCamera->AddComponent(FPSMove);
 
-		std::shared_ptr<Skybox> skybox = std::make_shared<Skybox>("Daytime");
-		mainCamera->AddComponent(skybox);
-
 		mainCamera->GetComponent<Transform>()->Translate(Vector3(-8, 15, 2.3));
 	};
 
 	auto CreateGround = [&]() {
+		Skybox skybox("Cloud");
+
 		ground = std::make_shared<Terrain>("Terrain.png", 1, 0.1, 4);
 		Instantiate(ground);
 	};
 
 	auto CreateObjects = [&]() {
-		auto cur = Instantiate(Importer::PrefabSet["Pegasus statue"], ground->GetHeight(0, 0));
+		auto cur = Instantiate(Importer::GetPrefab("Pegasus statue"), ground->GetHeight(0, 0));
 		cur->GetComponent<Transform>()->SetScale(Vector3(10,10,10));
+
+		cur = Instantiate(Importer::GetPrefab("Lion"), ground->GetHeight(0, 10));
+		cur->GetComponent<Transform>()->SetScale(Vector3(1.5, 1.5, 1.5));
+		cur->GetComponent<Transform>()->SetRotate(Vector3(0, -90, 0));
+
+		cur = Instantiate(Importer::GetPrefab("Sphere"), ground->GetHeight(-5, 0));
+		cur->GetComponent<Transform>()->SetScale(Vector3(1, 1, 1));
+		cur->GetComponent<Transform>()->Translate(Vector3(0, 5, 0));
 	};
 
 	auto CreateLights = [&]() {
 		auto directLight = Instantiate(std::make_shared<Light>());
 		directLight->GetComponent<Light>()->shadowOpen = true;
-		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(45, -70, 0));
+		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(60, -100, 0));
+	};
+
+	auto GlobalIlluminate = [&]() {
+		auto gi = Instantiate();
+		gi->AddComponent(std::make_shared<IBL>());
+	};
+
+	auto CreatePanel = [&]() {
+		auto cur = Instantiate(std::make_shared<Panel>("Debug", Vector2(300, 300), Vector2(1, 1)));
+		cur->AddComponent(std::make_shared<ShowFPS>());
 	};
 
 	CreateGround();
 	CreateDefaultCamera();
 	CreateObjects();
 	CreateLights();
+	CreatePanel();
+	GlobalIlluminate();
 }

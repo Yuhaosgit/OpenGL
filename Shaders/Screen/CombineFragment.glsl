@@ -1,8 +1,6 @@
 #version 330 core
 
-uniform sampler2D diffuseTex;
-uniform sampler2D diffuseLight;
-uniform sampler2D specularLight;
+uniform sampler2D directLightTex;
 
 uniform samplerCube cubeTex;
 uniform sampler2D depthTex;
@@ -21,12 +19,8 @@ void main(void) {
 	}
 
 	else {
-		vec3 diffuse = texture(diffuseTex, IN.texCoord).xyz;
-		vec3 light = texture(diffuseLight, IN.texCoord).xyz;
-		vec3 specular = texture(specularLight, IN.texCoord).xyz;
-
-		fragColour.xyz = diffuse * light;
-		fragColour.xyz += specular;
-		fragColour.a = 1.0;
+		vec3 directLightResult = texelFetch(directLightTex, ivec2(gl_FragCoord.xy), 0).xyz;
+		fragColour = vec4(directLightResult, 1.0);
 	}
+	fragColour.rgb = pow(fragColour.rgb, vec3(1.0 / 2.2));
 }

@@ -1,79 +1,91 @@
-/*
+/******************************************************************************
 Class:Window
+Implements:
 Author:Rich Davison
-Description:Creates and handles the Window, including the initialisation of the mouse and keyboard.
-*/
+Description:TODO
+
+-_-_-_-_-_-_-_,------,
+_-_-_-_-_-_-_-|   /\_/\   NYANYANYAN
+-_-_-_-_-_-_-~|__( ^ .^) /
+_-_-_-_-_-_-_-""  ""
+
+*//////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "common.h"
-#include <string>
-
-#include <windows.h>
-#include <io.h>
-#include <stdio.h>
-#include <fcntl.h>
-
-#include "OGLRenderer.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "GameTimer.h"
 
-#define VC_EXTRALEAN
-#define WINDOWCLASS "WindowClass"
+#include "Vector2.h"
+
+#include <string>
 
 class OGLRenderer;
-
-class Window	{
+	
+class Window {
 public:
-	Window(std::string title = "OpenGL Framework", int sizeX = 1920, int sizeY = 1080, bool fullScreen = false);
-	~Window(void);
+	static Window* CreateGameWindow(std::string title = "Rendering Pipeline", 
+		int sizeX = 800, int sizeY = 600, bool fullScreen = false, int offsetX = 100, int offsetY = 50);
 
-	bool	UpdateWindow();	
+	static void DestroyGameWindow() {
+		delete window;
+		window = nullptr;
+	}
 
-	void	SetRenderer(OGLRenderer* r);
+	bool		UpdateWindow();
+	void		SetRenderer(OGLRenderer* r);
 
-	HWND	GetHandle();
+	bool		HasInitialised()	const { return init; }
 
-	bool	HasInitialised();
+	float		GetScreenAspect()	const {
+		return size.x / size.y;
+	}
 
-	void	LockMouseToWindow(bool lock);
-	void	ShowOSPointer(bool show);
+	Vector2		GetScreenSize()		const { return size; }
+	Vector2		GetScreenPosition()	const { return position; }
 
-	const std::string& GetTitle()   const { return windowTitle; }
+	const std::string&  GetTitle()   const { return windowTitle; }
 	void				SetTitle(const std::string& title) {
 		windowTitle = title;
-		SetWindowText(windowHandle, windowTitle.c_str());
+		UpdateTitle();
 	};
 
-	Vector2	GetScreenSize() {return size;};
+	virtual void	LockMouseToWindow(bool lock) = 0;
+	virtual void	ShowOSPointer(bool show) = 0;
 
-	static Keyboard*	GetKeyboard()	{return keyboard;}
-	static Mouse*		GetMouse()		{return mouse;}
-	static GameTimer*   GetTimer()		{return timer;}
+	virtual void	SetWindowPosition(int x, int y) {};
+	virtual void	SetFullScreen(bool state) {};
+	virtual void	SetConsolePosition(int x, int y) {};
+	virtual void	ShowConsole(bool state) {};
+	virtual bool	IsFullScreen() {return false;}
 
+
+	static const Keyboard*	 GetKeyboard() { return keyboard; }
+	static const Mouse*		 GetMouse() { return mouse; }
+	static const GameTimer*	 GetTimer() { return timer; }
+
+	static Window*	const GetWindow() { return window; }
 protected:
-	void	CheckMessages(MSG &msg);
-	static LRESULT CALLBACK WindowProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+	Window();
+	virtual ~Window();
 
-	HWND			windowHandle;
+	virtual void UpdateTitle() {}
+
+	virtual bool InternalUpdate() = 0;
+
+	void ResizeRenderer();
+
+	OGLRenderer*	renderer;
+
+	bool				init;
+	Vector2				position;
+	Vector2				size;
+	Vector2				defaultSize;
+
+	std::string			windowTitle;
 
 	static Window*		window;
 	static Keyboard*	keyboard;
 	static Mouse*		mouse;
 	static GameTimer*	timer;
-
-	OGLRenderer*		renderer;
-
-	bool				forceQuit;
-	bool				init;
-	bool				fullScreen;
-	bool				lockMouse;
-	bool				showMouse;
-	bool				mouseLeftWindow;
-	bool				isActive;
-
-	Vector2				position;
-	Vector2				size;
-
-	std::string			windowTitle;
 };

@@ -53,8 +53,8 @@ void ScreenFBO::ClearBuffer() {
 
 #pragma region Gbuffer
 void GeometryFBO::GenerateFrameBuffer() {
-	int width = OGLRenderer::GetWidth();
-	int height = OGLRenderer::GetHeight();
+	int width = OGLRenderer::GetCurrentWidth();
+	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
 	glGenFramebuffers(1, &frameBuffer);
@@ -83,8 +83,8 @@ void GeometryFBO::ClearBuffer() {
 
 #pragma region DecalFBO
 void DecalFBO::GenerateFrameBuffer() {
-	int width = OGLRenderer::GetWidth();
-	int height = OGLRenderer::GetHeight();
+	int width = OGLRenderer::GetCurrentWidth();
+	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
 	glGenFramebuffers(1, &frameBuffer);
@@ -123,22 +123,20 @@ void DecalFBO::ClearBuffer() {
 
 #pragma region LightFBO
 void LightFBO::GenerateFrameBuffer() {
-	int width = OGLRenderer::GetWidth();
-	int height = OGLRenderer::GetHeight();
+	int width = OGLRenderer::GetCurrentWidth();
+	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
 	glGenFramebuffers(1, &frameBuffer);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-	initFlag = diffuseTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
-	initFlag = specularTareget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = PBRTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
 	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
-	GLenum attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, attachments);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	if (!initFlag) {
 		throw "LightFBO FBO initialization failed";
@@ -152,8 +150,8 @@ void LightFBO::ClearBuffer() {
 
 #pragma region OITFBO
 void OITFBO::GenerateFrameBuffer() {
-	int width = OGLRenderer::GetWidth();
-	int height = OGLRenderer::GetHeight();
+	int width = OGLRenderer::GetCurrentWidth();
+	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
 	glGenFramebuffers(1, &frameBuffer);
@@ -201,8 +199,8 @@ void OITFBO::ClearBuffer() {
 
 #pragma region OutcomeFBO
 void OutcomeFBO::GenerateFrameBuffer() {
-	int width = OGLRenderer::GetWidth();
-	int height = OGLRenderer::GetHeight();
+	int width = OGLRenderer::GetCurrentWidth();
+	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
 	glGenFramebuffers(1, &frameBuffer);
@@ -222,4 +220,23 @@ void OutcomeFBO::GenerateFrameBuffer() {
 void OutcomeFBO::ClearBuffer() {
 	glClear(GL_COLOR_BUFFER_BIT);
 }
+#pragma endregion
+
+#pragma region Indirect Diffuse
+void IndirectDiffuseFBO::GenerateFrameBuffer() {
+	bool initFlag = false;
+	glGenFramebuffers(1, &frameBuffer);
+	//lighting buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+	initFlag = indirectDiffuse->GenerateCubemap(cubemapResolution, frameBuffer);
+
+	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if (!initFlag) {
+		throw "Outcome FBO initialization failed";
+	}
+}
+
+void IndirectDiffuseFBO::ClearBuffer() {}
 #pragma endregion

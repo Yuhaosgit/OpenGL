@@ -11,7 +11,14 @@ public:
 
 	void Delete() { glDeleteTextures(1, &texture); }
 	virtual void Submit(Shader* targetShader, const std::string& variableName, int layer) = 0;
-
+	static void UnbindTexture2D(int position) {
+		glActiveTexture(GL_TEXTURE0 + position);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	static void UnbindTextureCube(int position) {
+		glActiveTexture(GL_TEXTURE0 + position);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}
 protected:
 	GLuint texture = 0;
 };
@@ -39,8 +46,11 @@ enum class RenderTextureFormat {
 };
 
 class RenderTexture: public Texture2D {
+	friend class EnvironmentDiffusePass;
+	friend class Exporter;
 public:
 	bool Generate(GLenum attatchment, GenerateFunc generateFunc, int width, int height, GLuint in_frameBuffer);
+	bool GenerateCubemap(int size, GLuint in_frameBuffer);
 
 	GLuint frameBuffer;
 	RenderTextureFormat format;

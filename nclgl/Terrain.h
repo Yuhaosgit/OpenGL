@@ -6,10 +6,10 @@
 #include "OGLRenderer.h"
 #include "MeshRender.h"
 
-struct Prefab;
 class Terrain : public MeshRender{
 private:
 	int width, height;
+	std::shared_ptr<Mesh> terrainMesh;
 public:
 	void AddInstance(std::shared_ptr<Component> component);
 	static std::vector<std::weak_ptr<Terrain>> terrains;

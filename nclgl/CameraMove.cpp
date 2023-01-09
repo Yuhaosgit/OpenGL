@@ -37,20 +37,25 @@ void CameraMove::Update() {
 
 		float constSpeed = speed * Window::GetTimer()->GetTimeDeltaSeconds();
 
-		if (Window::GetKeyboard()->KeyDown(KEYBOARD_W))
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::W))
 			transform.lock()->Translate(forward * constSpeed);
-		if (Window::GetKeyboard()->KeyDown(KEYBOARD_S))
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::S))
 			transform.lock()->Translate(-forward * constSpeed);
-		if (Window::GetKeyboard()->KeyDown(KEYBOARD_A))
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::A))
 			transform.lock()->Translate(left * constSpeed);
-		if (Window::GetKeyboard()->KeyDown(KEYBOARD_D))
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::D))
 			transform.lock()->Translate(-left * constSpeed);
-		if (Window::GetKeyboard()->KeyDown(KEYBOARD_SHIFT))
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::SHIFT))
 			transform.lock()->Translate(Vector3(0, -1, 0) * constSpeed);
-		if (Window::GetKeyboard()->KeyDown(KEYBOARD_SPACE))
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::SPACE))
 			transform.lock()->Translate(Vector3(0, 1, 0) * constSpeed);
 	};
 
-	Move();
-	Turn();
+	if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::L))
+		cameraLock = !cameraLock;
+
+	if (!cameraLock) {
+		Move();
+		Turn();
+	}
 }

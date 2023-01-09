@@ -1,9 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="MeshMaterial.cpp" />
     <ClCompile Include="OGLRenderer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="..\Third Party\glad\glad.c">
@@ -30,8 +28,6 @@
     <ClCompile Include="Window.cpp">
       <Filter>Windows and Input</Filter>
     </ClCompile>
-    <ClCompile Include="Plane.cpp" />
-    <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="ShaderLoader.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
@@ -74,9 +70,6 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>GameObject</Filter>
     </ClCompile>
-    <ClCompile Include="Decal.cpp">
-      <Filter>Component\Decal</Filter>
-    </ClCompile>
     <ClCompile Include="Component.cpp">
       <Filter>Component</Filter>
     </ClCompile>
@@ -92,12 +85,40 @@
     <ClCompile Include="Skybox.cpp">
       <Filter>Component\Skybox</Filter>
     </ClCompile>
+    <ClCompile Include="Panel.cpp">
+      <Filter>Component\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>Component\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ShowFPS.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32Keyboard.cpp">
+      <Filter>Windows and Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32Mouse.cpp">
+      <Filter>Windows and Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32Window.cpp">
+      <Filter>Windows and Input</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTimer.cpp">
+      <Filter>Windows and Input</Filter>
+    </ClCompile>
+    <ClCompile Include="GI.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="Exporter.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Decal.cpp">
+      <Filter>Component\Decal</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
-    <ClInclude Include="GameTimer.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MeshMaterial.h" />
     <ClInclude Include="OGLRenderer.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Matrix2.h">
@@ -130,11 +151,6 @@
     <ClInclude Include="Window.h">
       <Filter>Windows and Input</Filter>
     </ClInclude>
-    <ClInclude Include="InputDevice.h">
-      <Filter>Windows and Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Plane.h" />
-    <ClInclude Include="Frustum.h" />
     <ClInclude Include="ShaderLoader.h">
       <Filter>Resources</Filter>
     </ClInclude>
@@ -183,9 +199,6 @@
     <ClInclude Include="GameObject.h">
       <Filter>GameObject</Filter>
     </ClInclude>
-    <ClInclude Include="Decal.h">
-      <Filter>Component\Decal</Filter>
-    </ClInclude>
     <ClInclude Include="Component.h">
       <Filter>Component</Filter>
     </ClInclude>
@@ -198,14 +211,50 @@
     <ClInclude Include="CameraMove.h">
       <Filter>Scripts</Filter>
     </ClInclude>
-    <ClInclude Include="RenderGraph.h">
-      <Filter>RenderGraph</Filter>
-    </ClInclude>
     <ClInclude Include="ScriptFiles.h">
       <Filter>Scripts</Filter>
     </ClInclude>
     <ClInclude Include="Skybox.h">
       <Filter>Component\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="Panel.h">
+      <Filter>Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Text.hpp">
+      <Filter>Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ShowFPS.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="Slider.hpp">
+      <Filter>Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="InputDevice.h">
+      <Filter>Windows and Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32Keyboard.h">
+      <Filter>Windows and Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32Mouse.h">
+      <Filter>Windows and Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32Window.h">
+      <Filter>Windows and Input</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTimer.h">
+      <Filter>Windows and Input</Filter>
+    </ClInclude>
+    <ClInclude Include="GI.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="Exporter.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Decal.h">
+      <Filter>Component\Decal</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -266,11 +315,11 @@
     <Filter Include="Scripts">
       <UniqueIdentifier>{4f25336a-7d34-4c28-9ce1-f9ca4c9703b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RenderGraph">
-      <UniqueIdentifier>{6445a623-0de2-4c80-b480-fa027eec0d5d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Component\Skybox">
       <UniqueIdentifier>{60c32fef-80de-4d88-ab84-0bd0bd26bbcd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Component\UI">
+      <UniqueIdentifier>{3cb8fd5a-e153-4745-bfd9-bc83991ef6d5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

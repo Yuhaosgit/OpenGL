@@ -34,6 +34,9 @@ public:
 
 	Vector4 color;
 	float range;
+	float intensity = 2.0;
+	float lightWidth = 0.7f;
+	float nearPlane = 7.5f;
 
 	bool shadowOpen = false;
 	Matrix4 lightViewMatrix;

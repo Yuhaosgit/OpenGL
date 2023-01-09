@@ -35,6 +35,7 @@ public:
 	void SubmitVector3(const Vector3& value, const std::string& name);
 	void SubmitVector4(const Vector4& value, const std::string& name);
 	void SubmitMatrix4(const Matrix4& value, const std::string& name);
+
 protected:
 	void BindShaderToProgram();
 	void SetDefaultAttributes();

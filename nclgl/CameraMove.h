@@ -10,6 +10,8 @@ public:
 	float pitch = 34.0f;
 	float speed = 20.0f;
 
+	bool cameraLock = false;
+
 	virtual void Start() override;
 	virtual void Update() override;
 

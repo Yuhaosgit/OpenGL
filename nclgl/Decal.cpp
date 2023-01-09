@@ -11,8 +11,8 @@ void Decal::AddInstance(std::shared_ptr<Component> component) {
 }
 
 Decal::Decal() {
-	mesh = Importer::MeshSet["Cube"];
-	material = Importer::MaterialSet["DecalMaterial"];
+	mesh = Importer::GetMesh("Cube");
+	material = Importer::GetMaterial("DecalMaterial");
 }
 
 void Decal::Render() {

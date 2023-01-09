@@ -4,12 +4,11 @@
 #include "Transform.h"
 #include "Material.h"
 #include "MeshRender.h"
-#include "Decal.h"
 #include "Light.h"
 #include "Terrain.h"
 #include "Component.h"
-#include "Skybox.h"
 #include "ScriptFiles.h"
+#include "Panel.h"
 
 #include <unordered_map>
 #include <vector>

@@ -12,7 +12,7 @@ void MeshRender::AddInstance(std::shared_ptr<Component> component) {
 
 MeshRender::MeshRender(){
 	material = std::make_unique <Material>();
-	shadowMaterial = Importer::MaterialSet["ShadowMaterial"];
+	shadowMaterial = Importer::GetMaterial("ShadowMaterial");
 }
 
 MeshRender::MeshRender(const MeshRender& copy):Component(copy) {
@@ -20,7 +20,7 @@ MeshRender::MeshRender(const MeshRender& copy):Component(copy) {
 	Material* mat = new Material();
 	mat = copy.material.get();
 	material.reset(mat);
-	shadowMaterial = Importer::MaterialSet["ShadowMaterial"];
+	shadowMaterial = Importer::GetMaterial("ShadowMaterial");
 }
 
 void MeshRender::Render() {

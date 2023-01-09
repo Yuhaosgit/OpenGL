@@ -25,14 +25,12 @@ _-_-_-_-_-_-_-""  ""
 #include "GL/GL.h"
 #include "KHR/WGLext.h"
 
-#include "SOIL/SOIL.h"
-
 #include "Vector4.h"
 #include "Vector3.h"
 #include "Vector2.h"
 #include "Quaternion.h"
 #include "Matrix4.h"
-#include "Window.h"
+#include "Win32Window.h"
 #include "Shader.h"
 #include "Mesh.h"
 #include "Camera.h"
@@ -43,33 +41,24 @@ using std::vector;
 
 extern const Matrix4 biasMatrix;
 
-class Shader;
-
 class OGLRenderer	{
 public:
 	friend class Window;
-	OGLRenderer(Window &parent);
+	OGLRenderer(Win32Window &parent);
 	virtual ~OGLRenderer(void);
 
 	virtual void	RenderScene() = 0;
 	virtual void	UpdateScene(const float& msec) = 0;
 	void			SwapBuffers();
 
-	bool			HasInitialised() const;	
-	void			BindShader(Shader* s);
+	bool			HasInitialised() const;
 
-	void			UpdateShaderMatrices(bool identity = false);
+	void OnWindowResize(int w, int h);
+	void OnWindowDetach() { }
 
-	static float GetWidth() { return width; }
-	static float GetHeight() { return height; }
-
-	static float GetWindowWidth() { return windowWidth; }
-	static float GetWindowHeight() { return windowHeight; }
-
-	Matrix4 textureMatrix;	//Texture matrix
+	static int GetCurrentWidth() { return currentWidth; }
+	static int GetCurrentHeight() { return currentHeight; }
 protected:
-	virtual void	Resize(int x, int y);	
-
 	void StartDebugGroup(const std::string& s) {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, (GLsizei)s.length(), s.c_str());
 	}
@@ -78,16 +67,13 @@ protected:
 		glPopDebugGroup();
 	}
 
-	static int		width;			//Render area width (not quite the same as window width)
-	static int		height;			//Render area height (not quite the same as window height)
-
-	static int		windowWidth;
-	static int		windowHeight;
+	static int		currentWidth;			//Render area width (not quite the same as window width)
+	static int		currentHeight;			//Render area height (not quite the same as window height)
 
 	bool	init;			//Did the renderer initialise properly?
-
+	Win32Window& hostWindow;
+	void OGLRenderer::InitWithWin32(Window& w);
 private:
-	Shader* currentShader;	
 	HDC		deviceContext;	//...Device context?
 	HGLRC	renderContext;	//Permanent Rendering Context
 #ifdef _DEBUG

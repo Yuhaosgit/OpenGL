@@ -51,7 +51,21 @@ void Material::SubmitMatrixSet(bool sendModelMat, bool sendViewMat, bool sendPro
 }
 void Material::SubmitTextureSet() {
 	int i = 0;
+
 	for (auto& data : TextureSet) {
+		if (data.second.lock() == nullptr) {
+			if (data.first == "metallicTex") {
+				shader->SubmitBool(false, "metallicExist");
+			}
+			else if (data.first == "roughnessTex") {
+				shader->SubmitBool(false, "roughnessExist");
+			}
+			else if (data.first == "enviDiffuseTex") {
+				Texture::UnbindTextureCube(0);
+				shader->SubmitBool(false, "enviDiffuseExist");
+			}
+			continue;
+		}
 		data.second.lock()->Submit(shader, data.first, i);
 		i++;
 	}

@@ -1,21 +1,18 @@
-/******************************************************************************
-Class:GameTimer
-Author:Rich Davison
-Description:Wraps Windows PerformanceCounter. GameTimers keep track of how much
-time has passed since they were last polled - so you could use multiple
-GameTimers to trigger events at different time periods. 
+/*
+Part of Newcastle University's Game Engineering source code.
 
--_-_-_-_-_-_-_,------,   
-_-_-_-_-_-_-_-|   /\_/\   NYANYANYAN
--_-_-_-_-_-_-~|__( ^ .^) /
-_-_-_-_-_-_-_-""  ""   
+Use as you see fit!
 
-*//////////////////////////////////////////////////////////////////////////////
-
+Comments and queries to: richard-gordon.davison AT ncl.ac.uk
+https://research.ncl.ac.uk/game/
+*/
 #pragma once
+
 #include <chrono>
 
-class GameTimer	{
+typedef  std::chrono::time_point<std::chrono::high_resolution_clock>  Timepoint;
+
+class GameTimer {
 public:
 	GameTimer(void);
 	~GameTimer(void) {}
@@ -28,9 +25,9 @@ public:
 
 	void	Tick();
 protected:
-	typedef  std::chrono::time_point<std::chrono::high_resolution_clock>  Timepoint;
 	float		timeDelta;
 	Timepoint	firstPoint;
 	Timepoint	nowPoint;
 };
+
 

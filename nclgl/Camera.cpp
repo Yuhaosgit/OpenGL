@@ -12,7 +12,7 @@ void Camera::AddInstance(std::shared_ptr<Component> component) {
 	cameras.emplace_back(std::dynamic_pointer_cast<Camera>(component));
 }
 
-Camera::Camera() { 
+Camera::Camera() :width(OGLRenderer::GetCurrentWidth()), height(OGLRenderer::GetCurrentHeight()){
 	SetProjMatrix();
 }
 
@@ -32,8 +32,6 @@ void Camera::UpdateViewMatrix() {
 }
 
 void Camera::SetProjMatrix() {
-	float width = OGLRenderer::GetWidth();
-	float height = OGLRenderer::GetHeight();
 	float aspect = width / height;
 
 	projMatrix = Matrix4::Perspective(nearPlane, farPlane, aspect, FOV);
@@ -63,8 +61,8 @@ void Camera::UpdateList() {
 				auto transform = light.lock()->gameObject->GetComponent<Transform>();
 				auto direction = transform->GetRotate().RotationMatrix().Forward();
 
-				light.lock()->lightProjMatrix = Matrix4::Orthographic(0.1, 100, 50, -50, 50, -50);
-				light.lock()->lightViewMatrix = Matrix4::BuildViewMatrix(direction * 50, Vector3(0, 0, 0));
+				light.lock()->lightProjMatrix = Matrix4::Orthographic(0.1, 50, 50, -50, 50, -50);
+				light.lock()->lightViewMatrix = Matrix4::BuildViewMatrix(direction * 20, Vector3(0, 0, 0));
 			
 				for (int i = 1; i < MeshRender::meshRenders.size(); ++i) {
 					light.lock()->shadowList.emplace_back(MeshRender::meshRenders[i]);

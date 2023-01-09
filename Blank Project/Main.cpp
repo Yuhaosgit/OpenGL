@@ -1,23 +1,20 @@
-#include "../nclgl/window.h"
 #include "Renderer.h"
 
 int main(){
-	//Window windows("OpenGL", 1920, 1080, false);
-	Window windows("OpenGL", 1280, 760, false);
+	Window* windows = Window::CreateGameWindow("Opengl", 1280, 720);
 
-
-	if(!windows.HasInitialised()) {
+	if(!windows->HasInitialised()) {
 		return -1;
 	}
 	
-	if(!Renderer::instance(&windows)->HasInitialised()) {
+	if(!Renderer::instance((Win32Window*)windows)->HasInitialised()) {
 		return -1;
 	}
 
-	windows.LockMouseToWindow(true);
-	windows.ShowOSPointer(true);
+	windows->LockMouseToWindow(true);
+	windows->ShowOSPointer(true);
 
-	while(windows.UpdateWindow()  && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)){
+	while(windows->UpdateWindow()  && !Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)){
 		Renderer::instance()->UpdateScene(Window::GetTimer()->GetTimeDeltaSeconds());
 		Renderer::instance()->RenderScene();
 		Renderer::instance()->SwapBuffers();

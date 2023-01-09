@@ -1,6 +1,9 @@
 #include "Terrain.h"
 #include "Importer.h"
 #include "Material.h"
+#define STB_IMAGE_IMPLEMENTATION    
+#include "stb_image.h"
+
 #include <iostream>
 #include <random>
 #include <thread>
@@ -17,15 +20,14 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 	int channels;
 	auto path = Importer::FindFile("../Terrain", name);
 
-	GLubyte* data = SOIL_load_image(path.c_str(), &width, &height, &channels, 1);
+	GLubyte* data = stbi_load(path.c_str(), &width, &height, &channels, 1);
 
 	if (!data) {
 		std::cout << "Heightmap  can't load  file!\n";
 		return;
 	}
 
-	auto terrainMesh = std::make_shared<Mesh>();
-	Importer::MeshSet["Terrain"] = terrainMesh;
+	terrainMesh = std::make_shared<Mesh>();
 
 	mesh = terrainMesh;
 	int numVertices = width * height;
@@ -66,8 +68,7 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 			singleThread.join();
 	}
 
-	SOIL_free_image_data(data);
-
+	stbi_image_free(data);
 
 	auto CalculateTriangles = [&]() {
 		int i = 0;
@@ -96,7 +97,7 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 
 	mesh.lock()->BufferData();
 	
-	auto textures = Importer::FindFiles("../Terrain", FileType::Image);
+	auto textures = Importer::FindFiles("../Terrain", FileType::DDS);
 	for (std::string& texture : textures) {
 		texture = Importer::LoadTexture(texture);
 	}

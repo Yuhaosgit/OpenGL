@@ -23,9 +23,10 @@ void  main(void) {
 	OUT.colour = colour;
 	OUT.texCoord = texCoord;
 
-	OUT.normal = normalize(mat3(modelMatrix) * normalize(normal));
-	OUT.tangent = normalize(mat3(modelMatrix) * normalize(tangent));
-	OUT.bitangent = normalize(mat3(modelMatrix) * normalize(bitangent));
+	mat3 TIModelMat= transpose(inverse(mat3(modelMatrix)));
+	OUT.normal = normalize(TIModelMat * normalize(normal));
+	OUT.tangent = normalize(TIModelMat * normalize(tangent));
+	OUT.bitangent = normalize(TIModelMat * normalize(bitangent));
 
 	gl_Position = projMatrix * viewMatrix * modelMatrix * vec4(position, 1.0f);
 }

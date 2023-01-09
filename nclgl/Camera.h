@@ -40,6 +40,10 @@ public:
 	void SetNearPlane(const float& nearPlane_) { nearPlane = nearPlane_; SetProjMatrix(); }
 	void SetFarPlane(const float& farPlane_) { farPlane = farPlane_; SetProjMatrix(); }
 	void SetFOV(const float& FOV_) { FOV = FOV_; SetProjMatrix(); }
+	
+	void SetSize(const float& in_width, const float& in_height) { width = in_width; height = in_height; SetProjMatrix(); }
+	float width;
+	float height;
 private:
 	float nearPlane = 0.01f;
 	float farPlane = 1000.0f;

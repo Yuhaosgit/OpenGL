@@ -12,8 +12,8 @@ void Light::AddInstance(std::shared_ptr<Component> component) {
 }
 
 Light::Light() :lightType(LightType::Direct), color(Vector4(1, 1, 1, 1)), range(10) {
-	mesh = Importer::MeshSet["Plane"];
-	material = Importer::MaterialSet["DirectLightMaterial"];
+	mesh = Importer::GetMesh("Plane");
+	material = Importer::GetMaterial("DirectLightMaterial");
 }
 
 Light::Light(const Light& copy) : color(copy.color), range(copy.range), Component(copy) {
@@ -26,12 +26,12 @@ Light::Light(const Light& copy) : color(copy.color), range(copy.range), Componen
 void Light::SetLightType(LightType type) {
 	lightType = type;
 	if (type == LightType::Direct) {
-		mesh = Importer::MeshSet["Plane"];
-		material = Importer::MaterialSet["DirectLightMaterial"];
+		mesh = Importer::GetMesh("Plane");
+		material = Importer::GetMaterial("DirectLightMaterial");
 	}
 	else if (type == LightType::Point) {
-		mesh = Importer::MeshSet["Cube"];
-		material = Importer::MaterialSet["PointLightMaterial"];
+		mesh = Importer::GetMesh("Cube");
+		material = Importer::GetMaterial("PointLightMaterial");
 	}
 }
 

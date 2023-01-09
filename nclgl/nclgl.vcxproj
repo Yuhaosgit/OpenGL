@@ -22,11 +22,15 @@
     <ClCompile Include="CameraMove.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Decal.cpp" />
+    <ClCompile Include="Exporter.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Animation.cpp" />
+    <ClCompile Include="GI.cpp" />
     <ClCompile Include="MeshRender.cpp" />
+    <ClCompile Include="Panel.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Script.cpp" />
+    <ClCompile Include="ShowFPS.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Texture.cpp">
       <DeploymentContent>true</DeploymentContent>
@@ -38,7 +42,6 @@
     <ClCompile Include="ShaderLoader.cpp" />
     <ClCompile Include="..\Third Party\glad\glad.c" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Keyboard.cpp" />
@@ -47,27 +50,34 @@
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MeshAnimation.cpp" />
-    <ClCompile Include="MeshMaterial.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="OGLRenderer.cpp" />
-    <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="UI.cpp" />
+    <ClCompile Include="Win32Keyboard.cpp" />
+    <ClCompile Include="Win32Mouse.cpp" />
+    <ClCompile Include="Win32Window.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraMove.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Decal.h" />
+    <ClInclude Include="Exporter.h" />
     <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="GI.h" />
     <ClInclude Include="MeshRender.h" />
-    <ClInclude Include="RenderGraph.h" />
+    <ClInclude Include="Panel.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Script.h" />
     <ClInclude Include="ScriptFiles.h" />
+    <ClInclude Include="ShowFPS.h" />
     <ClInclude Include="Skybox.h" />
+    <ClInclude Include="Slider.hpp" />
+    <ClInclude Include="Text.hpp" />
     <ClInclude Include="TextureGenerateFuncs.h" />
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Texture.h">
@@ -81,7 +91,6 @@
     <ClInclude Include="ShaderLoader.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="common.h" />
-    <ClInclude Include="Frustum.h" />
     <ClInclude Include="GameTimer.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="InputDevice.h" />
@@ -91,17 +100,19 @@
     <ClInclude Include="Matrix4.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MeshAnimation.h" />
-    <ClInclude Include="MeshMaterial.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="OGLRenderer.h" />
-    <ClInclude Include="Plane.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Vector4.h" />
+    <ClInclude Include="Win32Keyboard.h" />
+    <ClInclude Include="Win32Mouse.h" />
+    <ClInclude Include="Win32Window.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -190,7 +201,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib;SOIL.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -204,7 +215,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib; SOIL.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -221,7 +232,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib;SOIL.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -240,7 +251,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>opengl32.lib;SOIL.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -3,10 +3,11 @@
 #include "../nclgl/GameObject.h"
 #include "../nclgl/FrameBuffer.h"
 #include "../nclgl/Importer.h"
+#include "../nclgl/Win32Window.h"
 
 class Renderer : public OGLRenderer {
 public:
-	static Renderer* instance(Window* window = nullptr) {
+	static Renderer* instance(Win32Window* window = nullptr) {
 		static Renderer single(*window);
 		return &single;
 	}
@@ -21,7 +22,7 @@ private:
 	GameObject* Instantiate(std::shared_ptr<Component> component, Vector3 position = Vector3(0, 0, 0), GameObject* parent = nullptr);
 	GameObject* Instantiate(Vector3 position = Vector3(0, 0, 0), GameObject* parent = nullptr);
 
-	Renderer(Window& parent);
+	Renderer(Win32Window& parent);
 
 	void Initialize();
 	void SetEnvironment();
