@@ -3,12 +3,12 @@
 
 #pragma region Prototype
 void FrameBufferPrototype::BindFrameBuffer() {
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 }
 
 void CopyRenderTexture(std::shared_ptr<RenderTexture> read, std::shared_ptr<RenderTexture> draw, RenderTextureFormat RenderTextureFormat) {
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, read->frameBuffer);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw->frameBuffer);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, read->frameBuffer->content);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw->frameBuffer->content);
 
 	GLuint buffer = 0;
 	if (RenderTextureFormat == RenderTextureFormat::COLOR)
@@ -25,11 +25,11 @@ void CopyRenderTexture(std::shared_ptr<RenderTexture> read, std::shared_ptr<Rend
 #pragma region shadowFBO
 void ShadowFBO::GenerateFrameBuffer() {
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &content);
 	//lighting buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = depthTarget->Generate(0, GenerateDepthTexture, ShadowMapSize, ShadowMapSize, frameBuffer);
+	initFlag = depthTarget->Generate(0, GenerateDepthTexture, ShadowMapSize, ShadowMapSize, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -57,12 +57,12 @@ void GeometryFBO::GenerateFrameBuffer() {
 	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glGenFramebuffers(1, &content);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
-	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
-	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, this);
+	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, this);
+	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -87,13 +87,13 @@ void DecalFBO::GenerateFrameBuffer() {
 	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &content);
 	//lighting buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
-	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, frameBuffer);
-	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
+	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, this);
+	initFlag = normalTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateColorTexture, width, height, this);
+	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -127,12 +127,12 @@ void LightFBO::GenerateFrameBuffer() {
 	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &content);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = PBRTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
-	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
+	initFlag = PBRTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, this);
+	initFlag = stencilDepthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -154,13 +154,13 @@ void OITFBO::GenerateFrameBuffer() {
 	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &content);
 	//lighting buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = accumulationTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateAccumulationTexture, width, height, frameBuffer);
-	initFlag = revealTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateRevealTexture, width, height, frameBuffer);
-	initFlag = depthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, frameBuffer);
+	initFlag = accumulationTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateAccumulationTexture, width, height, this);
+	initFlag = revealTarget->Generate(GL_COLOR_ATTACHMENT1, GenerateRevealTexture, width, height, this);
+	initFlag = depthTarget->Generate(GL_DEPTH24_STENCIL8, GenerateDepthStencilTexture, width, height, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -203,11 +203,11 @@ void OutcomeFBO::GenerateFrameBuffer() {
 	int height = OGLRenderer::GetCurrentHeight();
 
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &content);
 	//lighting buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, frameBuffer);
+	initFlag = colorTarget->Generate(GL_COLOR_ATTACHMENT0, GenerateColorTexture, width, height, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -222,14 +222,14 @@ void OutcomeFBO::ClearBuffer() {
 }
 #pragma endregion
 
-#pragma region Indirect Diffuse
-void IndirectDiffuseFBO::GenerateFrameBuffer() {
+#pragma region Indirect
+void EnvironmentMapFBO::GenerateFrameBuffer() {
 	bool initFlag = false;
-	glGenFramebuffers(1, &frameBuffer);
+	glGenFramebuffers(1, &content);
 	//lighting buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
 
-	initFlag = indirectDiffuse->GenerateCubemap(cubemapResolution, frameBuffer);
+	initFlag = environmentTarget->GenerateCubemap(diffuseResolution, this);
 
 	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -238,5 +238,43 @@ void IndirectDiffuseFBO::GenerateFrameBuffer() {
 	}
 }
 
-void IndirectDiffuseFBO::ClearBuffer() {}
+void EnvironmentMapFBO::ClearBuffer() {}
+
+void EnvironmentMapFBO::GenerateMipmap(int in_width, int in_height) {
+	environmentTarget->width = in_width;
+	environmentTarget->height = in_height;
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, environmentTarget->GetTextureContent());
+	for (int i = 0; i < 6; ++i)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8, 
+			in_width, in_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+}
+
+void SpecularLUTFBO::GenerateFrameBuffer() {
+	bool initFlag = false;
+	glGenFramebuffers(1, &content);
+	//lighting buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, content);
+
+	initFlag = LUT_Target->Generate(GL_COLOR_ATTACHMENT0, GenerateRGTexture, LUTResolution, LUTResolution, this);
+
+	initFlag = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if (!initFlag) {
+		throw "Outcome FBO initialization failed";
+	}
+}
+
+void SpecularLUTFBO::ClearBuffer() {
+}
+
 #pragma endregion

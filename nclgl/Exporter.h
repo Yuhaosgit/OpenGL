@@ -2,8 +2,11 @@
 #include <string>
 #include "GI.h"
 
+class RenderTexture;
+
 class Exporter {
 public:
-	static void ExportCubemap(const std::string& fileName, IBL* ibl);
-	static void WriteToFile(const std::string& path, int width, int height, int channels, void* data);
+	static void ExportCubemap(const std::string& path, RenderTexture* exportingTexture, int mipLevel = 0);
+	static void ExportTexture2D(const std::string& path, const std::string& fileName,RenderTexture* exportingTexture, int mipLevel = 0);
+	static void CheckFolderExist(const std::string& path);
 };

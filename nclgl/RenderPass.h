@@ -91,3 +91,23 @@ class EnvironmentDiffusePass :public RenderPassPrototype {
 	void RenderFunction(Camera* camera) override;
 	void RenderAfterSet() override;
 };
+
+class SpecularPrefilterPass :public RenderPassPrototype {
+	friend class RenderPass<SpecularPrefilterPass>;
+
+	SpecularPrefilterPass() = default;
+	void RenderPreset() override;
+	void RenderFunction(Camera* camera) override;
+	void RenderAfterSet() override;
+public:
+	const int maxMipLevel = 5;
+};
+
+class SpecularLUTPass :public RenderPassPrototype {
+	friend class RenderPass<SpecularLUTPass>;
+
+	SpecularLUTPass() = default;
+	void RenderPreset() override;
+	void RenderFunction(Camera* camera) override;
+	void RenderAfterSet() override;
+};

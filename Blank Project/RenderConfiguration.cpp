@@ -70,14 +70,18 @@ void Renderer::Initialize() {
 	auto ImportShader = []() {
 		Importer::LoadShader("Shadow", "ShadowVertex.glsl", "ShadowFragment.glsl");
 		Importer::LoadShader("Combine", "CombineVertex.glsl", "CombineFragment.glsl");
-		Importer::LoadShader("DirectLight", "CombineVertex.glsl", "DirectLightFragment.glsl");
+		Importer::LoadShader("DirectLight", "PresentVertex.glsl", "DirectLightFragment.glsl");
 		Importer::LoadShader("Gbuffer", "DefaultGbufferVertex.glsl", "DefaultGbufferFragment.glsl");
 		Importer::LoadShader("Debug", "DebugVertex.glsl", "DebugFragment.glsl");
-		Importer::LoadShader("IBL", "IBLVertex.glsl", "IBLFragment.glsl");
+		Importer::LoadShader("IBLDiifuse", "CombineVertex.glsl", "IBLDiffuseFragment.glsl");
+		Importer::LoadShader("IBLSpecularPrefilter", "CombineVertex.glsl", "IBLSpecularPrefilterFragment.glsl");
+		Importer::LoadShader("IBLSpecularLUT", "PresentVertex.glsl", "IBL_LUT_Fragment.glsl");
 	};
 
 	auto ImportBakedTexture = []() {
 		Importer::LoadCubemap("..\\Baked\\EnviDiffuse");
+		Importer::LoadPNG("..\\Baked\\Specular\\LUT.png");
+		Importer::LoadCubemap("..\\Baked\\Specular\\Prefilter\\mipmap0");
 	};
 
 	auto CreateCommonMaterial = []() {
@@ -99,9 +103,17 @@ void Renderer::Initialize() {
 		combineMaterial->SetTexture("depthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
 		Importer::SetMaterial("CombineMaterial", combineMaterial);
 
-		auto indirectDiffuseMaterial = std::make_shared<Material>();
-		indirectDiffuseMaterial->shader = Importer::GetShader("IBL");
-		Importer::SetMaterial("IndirectDiffuseMaterial", indirectDiffuseMaterial);
+		auto environmentDiffuseMaterial = std::make_shared<Material>();
+		environmentDiffuseMaterial->shader = Importer::GetShader("IBLDiifuse");
+		Importer::SetMaterial("EnvironmentDiffuseMaterial", environmentDiffuseMaterial);
+
+		auto specularPrefilterMaterial = std::make_shared<Material>();
+		specularPrefilterMaterial->shader = Importer::GetShader("IBLSpecularPrefilter");
+		Importer::SetMaterial("SpecularPrefilterMaterial", specularPrefilterMaterial);
+
+		auto specularLUTMaterial = std::make_shared<Material>();
+		specularLUTMaterial->shader = Importer::GetShader("IBLSpecularLUT");
+		Importer::SetMaterial("SpecularLUTMaterial", specularLUTMaterial);
 	};
 
 	ImportPrefab();

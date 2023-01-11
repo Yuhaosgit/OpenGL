@@ -116,6 +116,8 @@ void DirectLightPass::RenderFunction(Camera* camera) {
 		lightMat->SetVector3("lightOrientation", Vector3(direct.values[2], direct.values[6], direct.values[10]));
 
 		lightMat->SetTexture("enviDiffuseTex", Importer::GetTexture("EnviDiffuse"));
+		lightMat->SetTexture("prefilterMap", Importer::GetTexture("mipmap0"));
+		lightMat->SetTexture("LUT", Importer::GetTexture("LUT"));
 
 		Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
 		light.lock()->Render();
@@ -156,48 +158,102 @@ void CombinePass::RenderAfterSet() {
 }
 #pragma endregion
 
-#pragma region Environment Diffuse
+#pragma region Global lighting
+Matrix4 captureViews[] = {
+   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(1.0f,  0.0f,  0.0f),Vector3(0.0f, -1.0f,  0.0f)),
+   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(-1.0f,  0.0f,  0.0f), Vector3(0.0f, -1.0f,  0.0f)),
+   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  1.0f,  0.0f), Vector3(0.0f,  0.0f,  1.0f)),
+   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, -1.0f,  0.0f), Vector3(0.0f,  0.0f, -1.0f)),
+   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f,  1.0f), Vector3(0.0f, -1.0f,  0.0f)),
+   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f, -1.0f), Vector3(0.0f, -1.0f,  0.0f))
+};
+//enviornment diffuse
 void EnvironmentDiffusePass::RenderPreset() {
-	auto indirectDiffuseBuffer = FrameBuffer<IndirectDiffuseFBO>().instance();
-	indirectDiffuseBuffer->Bind();
+	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
+	EnviMapBuffer->Bind();
 
-	int size = indirectDiffuseBuffer->cubemapResolution;
+	int size = EnviMapBuffer->diffuseResolution;
 	glViewport(0, 0, size, size);
 }
 
 void EnvironmentDiffusePass::RenderFunction(Camera* camera) {
-	Matrix4 captureViews[] =
-	{
-	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(1.0f,  0.0f,  0.0f),Vector3(0.0f, -1.0f,  0.0f)),
-	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(-1.0f,  0.0f,  0.0f), Vector3(0.0f, -1.0f,  0.0f)),
-	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  1.0f,  0.0f), Vector3(0.0f,  0.0f,  1.0f)),
-	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, -1.0f,  0.0f), Vector3(0.0f,  0.0f, -1.0f)),
-	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f,  1.0f), Vector3(0.0f, -1.0f,  0.0f)),
-	   Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f, -1.0f), Vector3(0.0f, -1.0f,  0.0f))
-	};
+	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
+	auto mat = Importer::GetMaterial("EnvironmentDiffuseMaterial");
 
-	auto mat = Importer::GetMaterial("IndirectDiffuseMaterial");
 	mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
-
-	auto indirectDiffuseBuffer = FrameBuffer<IndirectDiffuseFBO>().instance();
-
 	Material::projMatrix = camera->GetProjMatrix();
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		Material::viewMatrix = captureViews[i];
-		camera->UpdateList();
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, indirectDiffuseBuffer->indirectDiffuse->texture, 0);
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnviMapBuffer->environmentTarget->GetTextureContent(), 0);
 		glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		Importer::GetMaterial("IndirectDiffuseMaterial")->SubmitData(false, true, true, false);
+		mat->SubmitData(false, true, true, false);
 		Importer::GetMesh("Plane")->Draw();
 	}
 }
 
 void EnvironmentDiffusePass::RenderAfterSet() {
+
+}
+
+//specular pre filtering
+void SpecularPrefilterPass::RenderPreset() {
+	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
+	EnviMapBuffer->Bind();
+
+	int size = EnviMapBuffer->specularResolution;
+	glViewport(0, 0, size, size);
+}
+void SpecularPrefilterPass::RenderFunction(Camera* camera) {
+	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
+	auto mat = Importer::GetMaterial("SpecularPrefilterMaterial");
+
+	mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
+	for (int mipLevel = 0; mipLevel < maxMipLevel; ++mipLevel)
+	{
+		int mipWidth = EnviMapBuffer->specularResolution * std::pow(0.5, mipLevel);
+		int mipHeight = EnviMapBuffer->specularResolution * std::pow(0.5, mipLevel);
+		camera->SetSize(mipWidth, mipHeight);
+		glViewport(0, 0, mipWidth, mipHeight);
+
+		float roughness = static_cast<float>(mipLevel) / static_cast<float>(maxMipLevel - 1);
+		mat->SetFloat("roughness", roughness);
+		for (int i = 0; i < 6; ++i)
+		{
+			Material::viewMatrix = captureViews[i];
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnviMapBuffer->environmentTarget->GetTextureContent(), mipLevel);
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			mat->SubmitData(false, true, true, false);
+			Importer::GetMesh("Plane")->Draw();
+		}
+	}
+}
+void SpecularPrefilterPass::RenderAfterSet() {
+
+}
+
+void SpecularLUTPass::RenderPreset() {
+	auto buffer = FrameBuffer<SpecularLUTFBO>().instance();
+
+	buffer->Bind();
+	glClear(GL_COLOR_BUFFER_BIT);
+	glViewport(0, 0, buffer->LUTResolution, buffer->LUTResolution);
+}
+
+void SpecularLUTPass::RenderFunction(Camera* camera) {
+	Importer::GetMaterial("SpecularLUTMaterial")->SubmitData();
+	Importer::GetMesh("Plane")->Draw();
+}
+
+void SpecularLUTPass::RenderAfterSet() {
 
 }
 #pragma endregion

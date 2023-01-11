@@ -11,6 +11,8 @@ public:
 
 	void Delete() { glDeleteTextures(1, &texture); }
 	virtual void Submit(Shader* targetShader, const std::string& variableName, int layer) = 0;
+
+	virtual void BindTexture() = 0;
 	static void UnbindTexture2D(int position) {
 		glActiveTexture(GL_TEXTURE0 + position);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -30,6 +32,9 @@ public:
 
 	~Texture2D() {}
 	void Submit(Shader* targetShader, const std::string& variableName, int layer) override;
+	void BindTexture() override {
+		glBindTexture(GL_TEXTURE_2D, texture);
+	}
 };
 
 class TextureCube : public Texture {
@@ -39,20 +44,23 @@ public:
 
 	~TextureCube() {}
 	void Submit(Shader* targetShader, const std::string& variableName, int layer) override;
+	void BindTexture() override {
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+	}
 };
 
 enum class RenderTextureFormat {
 	COLOR, DEPTH, STENCIL, STENCIL_DEPTH
 };
 
+class FrameBufferPrototype;
 class RenderTexture: public Texture2D {
-	friend class EnvironmentDiffusePass;
-	friend class Exporter;
 public:
-	bool Generate(GLenum attatchment, GenerateFunc generateFunc, int width, int height, GLuint in_frameBuffer);
-	bool GenerateCubemap(int size, GLuint in_frameBuffer);
+	bool Generate(GLenum attatchment, GenerateFunc generateFunc, int width, int height, FrameBufferPrototype* in_frameBuffer);
+	bool GenerateCubemap(int size, FrameBufferPrototype* in_frameBuffer);
+	GLuint GetTextureContent() { return texture; frameBuffer = nullptr; }
 
-	GLuint frameBuffer;
+	FrameBufferPrototype* frameBuffer;
 	RenderTextureFormat format;
 
 	int width = 0;

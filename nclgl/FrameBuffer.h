@@ -35,12 +35,12 @@ protected:
 	FrameBufferPrototype() = default;
 
 	void BindFrameBuffer();
-	virtual ~FrameBufferPrototype() { glDeleteFramebuffers(1, &frameBuffer); }
+	virtual ~FrameBufferPrototype() { glDeleteFramebuffers(1, &content); }
 
 	virtual void GenerateFrameBuffer() = 0;
 	virtual void ClearBuffer() = 0;
 
-	GLuint frameBuffer = 0;
+	GLuint content = 0;
 };
 
 class ShadowFBO :public FrameBufferPrototype {
@@ -162,18 +162,39 @@ private:
 	void ClearBuffer() override;
 };
 
-class IndirectDiffuseFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<IndirectDiffuseFBO>;
+class EnvironmentMapFBO :public FrameBufferPrototype {
+	friend class FrameBuffer<EnvironmentMapFBO>;
 public:
-	std::shared_ptr<RenderTexture> indirectDiffuse;
-	int cubemapResolution = 128;
+	std::shared_ptr<RenderTexture> environmentTarget;
+	int diffuseResolution = 128;
+	int specularResolution = 256;
+
+	void GenerateMipmap(int in_width, int in_height);
 private:
-	IndirectDiffuseFBO() {
-		indirectDiffuse = std::make_shared<RenderTexture>();
+	EnvironmentMapFBO() {
+		environmentTarget = std::make_shared<RenderTexture>();
 
 		GenerateFrameBuffer();
 	}
-	~IndirectDiffuseFBO() {}
+	~EnvironmentMapFBO() {}
+
+	void GenerateFrameBuffer() override;
+	void ClearBuffer() override;
+};
+
+class SpecularLUTFBO :public FrameBufferPrototype {
+	friend class FrameBuffer<SpecularLUTFBO>;
+public:
+	std::shared_ptr<RenderTexture> LUT_Target;
+	int LUTResolution = 512;
+
+private:
+	SpecularLUTFBO() {
+		LUT_Target = std::make_shared<RenderTexture>();
+
+		GenerateFrameBuffer();
+	}
+	~SpecularLUTFBO() {}
 
 	void GenerateFrameBuffer() override;
 	void ClearBuffer() override;

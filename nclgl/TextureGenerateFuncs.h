@@ -32,6 +32,11 @@ void GenerateColorTexture(int width, int height, GLuint* texture, GLenum attatch
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attatchment, GL_TEXTURE_2D, *texture, 0);
 }
 
+void GenerateRGTexture(int width, int height, GLuint* texture, GLenum attatchment) {
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, width, height, 0, GL_RG, GL_UNSIGNED_BYTE, NULL);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attatchment, GL_TEXTURE_2D, *texture, 0);
+}
+
 void GenerateAccumulationTexture(int width, int height, GLuint* texture, GLenum attatchment) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, attatchment, GL_TEXTURE_2D, *texture, 0);

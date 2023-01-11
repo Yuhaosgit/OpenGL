@@ -4,7 +4,9 @@ uniform sampler2D ColorRoughnessTex;
 uniform sampler2D normalMetallicTex;
 uniform sampler2D depthTex;
 uniform sampler2D shadowTex;
+uniform sampler2D LUT;  
 
+uniform samplerCube prefilterMap;
 uniform samplerCube enviDiffuseTex;
 
 uniform vec2 pixelSize;

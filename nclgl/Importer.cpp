@@ -193,7 +193,37 @@ void Importer::SetMaterial(const std::string& name, std::shared_ptr<Material> ma
 	MaterialSet[name] = material;
 }
 
+
+std::string Importer::LoadPNG(const std::string& fileName) {
+	int width, height, channels;
+	stbi_set_flip_vertically_on_load(true);
+	GLubyte* data = stbi_load(fileName.c_str(), &width, &height, &channels, 3);
+
+	if (!data) {
+		std::cout << "Load Image Fail!\n";
+		return "Image load error";
+	}
+	GLuint tex = 0;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	stbi_image_free(data);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	std::string name = fileName.substr(fileName.find_last_of("\\") + 1);
+	TextureSet[name] = std::make_shared<TextureCube>(tex);
+	return name;
+}
+
 std::string Importer::LoadTexture(const std::string& fileName) {
+
 	gli::texture tex = gli::load(fileName);
 	if (tex.empty()) {
 		return "The texture: " + fileName + " does not exist";
@@ -322,6 +352,7 @@ std::string Importer::LoadCubemap(const std::string& path) {
 	auto LoadPNG = [&]() {
 		for (int i = 0; i < 6; ++i) {
 			int width, height, channels;
+			stbi_set_flip_vertically_on_load(true);
 			GLubyte* data = stbi_load(fileNames[i].c_str(), &width, &height, &channels, 3);
 
 			if (!data) {

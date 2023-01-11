@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "FrameBuffer.h"
 
 void Texture2D::Submit(Shader* targetShader, const std::string& variableName, int layer) {
 	glActiveTexture(GL_TEXTURE0 + layer);
@@ -12,7 +13,7 @@ void TextureCube::Submit(Shader* targetShader, const std::string& variableName, 
 	glUniform1i(glGetUniformLocation(targetShader->GetProgram(), variableName.c_str()), layer);
 }
 
-bool RenderTexture::Generate(GLenum attatchment, GenerateFunc generateFunc, int width_, int height_, GLuint in_frameBuffer) {
+bool RenderTexture::Generate(GLenum attatchment, GenerateFunc generateFunc, int width_, int height_, FrameBufferPrototype* in_frameBuffer) {
 	width = width_;
 	height = height_;
 
@@ -44,7 +45,7 @@ bool RenderTexture::Generate(GLenum attatchment, GenerateFunc generateFunc, int 
 	return (texture != 0);
 }
 
-bool RenderTexture::GenerateCubemap(int size, GLuint in_frameBuffer){
+bool RenderTexture::GenerateCubemap(int size, FrameBufferPrototype* in_frameBuffer){
 	width = size;
 	height = size;
 	frameBuffer = in_frameBuffer;
