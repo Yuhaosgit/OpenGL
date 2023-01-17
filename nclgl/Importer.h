@@ -48,8 +48,6 @@ public:
 	static std::string LoadCubemap(const std::string& fileName);
 	static std::shared_ptr<Texture> GetTexture(const std::string& name);
 
-	static std::string LoadPNG(const std::string& fileName);
-
 	//load mesh
 	static std::shared_ptr<Mesh> LoadMesh(aiMesh* assimpMesh);
 	static std::shared_ptr<Mesh> GetMesh(const std::string& name);

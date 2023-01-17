@@ -1,17 +1,8 @@
 #include "Texture.h"
 #include "FrameBuffer.h"
 
-void Texture2D::Submit(Shader* targetShader, const std::string& variableName, int layer) {
-	glActiveTexture(GL_TEXTURE0 + layer);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glUniform1i(glGetUniformLocation(targetShader->GetProgram(), variableName.c_str()), layer);
-}
-
-void TextureCube::Submit(Shader* targetShader, const std::string& variableName, int layer) {
-	glActiveTexture(GL_TEXTURE0 + layer);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-	glUniform1i(glGetUniformLocation(targetShader->GetProgram(), variableName.c_str()), layer);
-}
+int Texture::activeCount = 0;
+std::vector<Texture*> Texture::activeTextures;
 
 bool RenderTexture::Generate(GLenum attatchment, GenerateFunc generateFunc, int width_, int height_, FrameBufferPrototype* in_frameBuffer) {
 	width = width_;

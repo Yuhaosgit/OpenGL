@@ -115,6 +115,9 @@
     <ClCompile Include="Decal.cpp">
       <Filter>Component\Decal</Filter>
     </ClCompile>
+    <ClCompile Include="ImageLoader.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
@@ -255,6 +258,9 @@
     </ClInclude>
     <ClInclude Include="Decal.h">
       <Filter>Component\Decal</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLoader.h">
+      <Filter>Resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

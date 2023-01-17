@@ -2,7 +2,7 @@
 #include "ShaderLoader.h"
 #include "Material.h"
 #include "Mesh.h"
-#include "stb_image.h"
+#include "ImageLoader.h"
 #include <ctime>
 #include <iostream>
 #include <filesystem>
@@ -193,37 +193,7 @@ void Importer::SetMaterial(const std::string& name, std::shared_ptr<Material> ma
 	MaterialSet[name] = material;
 }
 
-
-std::string Importer::LoadPNG(const std::string& fileName) {
-	int width, height, channels;
-	stbi_set_flip_vertically_on_load(true);
-	GLubyte* data = stbi_load(fileName.c_str(), &width, &height, &channels, 3);
-
-	if (!data) {
-		std::cout << "Load Image Fail!\n";
-		return "Image load error";
-	}
-	GLuint tex = 0;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	stbi_image_free(data);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	std::string name = fileName.substr(fileName.find_last_of("\\") + 1);
-	TextureSet[name] = std::make_shared<TextureCube>(tex);
-	return name;
-}
-
 std::string Importer::LoadTexture(const std::string& fileName) {
-
 	gli::texture tex = gli::load(fileName);
 	if (tex.empty()) {
 		return "The texture: " + fileName + " does not exist";
@@ -235,14 +205,6 @@ std::string Importer::LoadTexture(const std::string& fileName) {
 	gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
 	GLenum Target = GL.translate(Texture.target());
 	GLuint TextureName = 0;
-	glGenTextures(1, &TextureName);
-	glBindTexture(Target, TextureName);
-	glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(Texture.levels() - 1));
-	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_R, Format.Swizzles[0]);
-	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_G, Format.Swizzles[1]);
-	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_B, Format.Swizzles[2]);
-	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_A, Format.Swizzles[3]);
 
 	glm::tvec3<GLsizei> const Extent(Texture.extent());
 	GLsizei const FaceTotal = static_cast<GLsizei>(Texture.layers() * Texture.faces());
@@ -272,25 +234,13 @@ std::string Importer::LoadTexture(const std::string& fileName) {
 	};
 
 	auto format = IsColorTexture(name) ? TransformFormat_SRGB(Format.Internal) : Format.Internal;
-	glTexStorage2D(Target, static_cast<GLint>(Texture.levels()), format,Extent.x, Extent.y);
+	auto texture = std::make_shared<Texture2D>(Extent.x, Extent.y);
 
-	for (std::size_t Layer = 0; Layer < Texture.layers(); ++Layer)
-		for (std::size_t Face = 0; Face < Texture.faces(); ++Face)
-			for (std::size_t Level = 0; Level < Texture.levels(); ++Level)
-			{
-				GLsizei const LayerGL = static_cast<GLsizei>(Layer);
-				glm::tvec3<GLsizei> Extent(Texture.extent(Level));
+	for (int level = 0; level < Texture.levels(); ++level) {
+		texture->SetPixelData(Texture.data(0, 0, level), static_cast<GLsizei>(Texture.size(level)), level, format);
+	}
 
-				glCompressedTexSubImage2D(
-					Target, static_cast<GLint>(Level),
-					0, 0, Extent.x,Extent.y,
-					format, static_cast<GLsizei>(Texture.size(Level)),
-					Texture.data(Layer, Face, Level));
-			}
-		
-	glBindTexture(GL_TEXTURE_2D, 0);
-	TextureSet[name] = std::make_shared<Texture2D>(TextureName);
-
+	TextureSet[name] = texture;
     return name;
 }
 
@@ -340,28 +290,23 @@ std::string Importer::LoadCubemap(const std::string& path) {
 
 			glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
 			glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(tex.levels() - 1));
-			glTexParameteri(Target, GL_TEXTURE_SWIZZLE_R, Format.Swizzles[0]);
-			glTexParameteri(Target, GL_TEXTURE_SWIZZLE_G, Format.Swizzles[1]);
-			glTexParameteri(Target, GL_TEXTURE_SWIZZLE_B, Format.Swizzles[2]);
-			glTexParameteri(Target, GL_TEXTURE_SWIZZLE_A, Format.Swizzles[3]);
 
 			glCompressedTexImage2D(axis[i], 0, GL_COMPRESSED_SRGB_S3TC_DXT1_EXT, Extent.x, Extent.y, 0, (GLsizei)tex.size(0), tex.data(0, 0, 0));
+			tex.clear();
 		}
 	};
 
 	auto LoadPNG = [&]() {
 		for (int i = 0; i < 6; ++i) {
-			int width, height, channels;
-			stbi_set_flip_vertically_on_load(true);
-			GLubyte* data = stbi_load(fileNames[i].c_str(), &width, &height, &channels, 3);
+			auto image = ImageLoader::LoadPNG(fileNames[i]);
 
-			if (!data) {
+			if (!image.data) {
 				std::cout << "Load Image Fail!\n";
 				cubeTex = 0;
 				return "Image load error";
 			}
-			glTexImage2D(axis[i], 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-			stbi_image_free(data);
+			glTexImage2D(axis[i], 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+			image.Release();
 		}
 	};
 

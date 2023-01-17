@@ -26,6 +26,7 @@
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Animation.cpp" />
     <ClCompile Include="GI.cpp" />
+    <ClCompile Include="ImageLoader.cpp" />
     <ClCompile Include="MeshRender.cpp" />
     <ClCompile Include="Panel.cpp" />
     <ClCompile Include="RenderPass.cpp" />
@@ -69,6 +70,7 @@
     <ClInclude Include="Exporter.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GI.h" />
+    <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="MeshRender.h" />
     <ClInclude Include="Panel.h" />
     <ClInclude Include="RenderPass.h" />

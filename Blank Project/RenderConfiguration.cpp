@@ -80,7 +80,7 @@ void Renderer::Initialize() {
 
 	auto ImportBakedTexture = []() {
 		Importer::LoadCubemap("..\\Baked\\EnviDiffuse");
-		Importer::LoadPNG("..\\Baked\\Specular\\LUT.png");
+		//Importer::LoadPNG("..\\Baked\\Specular\\LUT.png");
 		Importer::LoadCubemap("..\\Baked\\Specular\\Prefilter\\mipmap0");
 	};
 
