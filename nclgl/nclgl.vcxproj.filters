@@ -37,9 +37,6 @@
     <ClCompile Include="Importer.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
-    <ClCompile Include="GameLogic.cpp">
-      <Filter>GameLogic</Filter>
-    </ClCompile>
     <ClCompile Include="Transform.cpp">
       <Filter>Component\Transform</Filter>
     </ClCompile>
@@ -55,11 +52,8 @@
     <ClCompile Include="Animation.cpp">
       <Filter>Component\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="FrameBuffer.cpp">
-      <Filter>FrameBuffer</Filter>
-    </ClCompile>
     <ClCompile Include="RenderPass.cpp">
-      <Filter>FrameBuffer</Filter>
+      <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>Component\Camera</Filter>
@@ -106,14 +100,20 @@
     <ClCompile Include="GameTimer.cpp">
       <Filter>Windows and Input</Filter>
     </ClCompile>
-    <ClCompile Include="GI.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
     <ClCompile Include="Exporter.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
     <ClCompile Include="Decal.cpp">
       <Filter>Component\Decal</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageLoader.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="LightProbe.cpp">
+      <Filter>Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="ReflectProbe.cpp">
+      <Filter>Component\Light</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,10 +161,7 @@
       <Filter>Resources</Filter>
     </ClInclude>
     <ClInclude Include="Event.h">
-      <Filter>GameLogic</Filter>
-    </ClInclude>
-    <ClInclude Include="GameLogic.h">
-      <Filter>GameLogic</Filter>
+      <Filter>Event</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">
       <Filter>Component\Transform</Filter>
@@ -182,13 +179,10 @@
       <Filter>Component\Animation</Filter>
     </ClInclude>
     <ClInclude Include="FrameBuffer.h">
-      <Filter>FrameBuffer</Filter>
-    </ClInclude>
-    <ClInclude Include="TextureGenerateFuncs.h">
-      <Filter>FrameBuffer</Filter>
+      <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="RenderPass.h">
-      <Filter>FrameBuffer</Filter>
+      <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>Component\Camera</Filter>
@@ -198,9 +192,6 @@
     </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>GameObject</Filter>
-    </ClInclude>
-    <ClInclude Include="Component.h">
-      <Filter>Component</Filter>
     </ClInclude>
     <ClInclude Include="Terrain.h">
       <Filter>Component\Terrain</Filter>
@@ -247,14 +238,26 @@
     <ClInclude Include="GameTimer.h">
       <Filter>Windows and Input</Filter>
     </ClInclude>
-    <ClInclude Include="GI.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
     <ClInclude Include="Exporter.h">
       <Filter>Resources</Filter>
     </ClInclude>
     <ClInclude Include="Decal.h">
       <Filter>Component\Decal</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLoader.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Pipeline.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="LightProbe.h">
+      <Filter>Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="ReflectProbe.h">
+      <Filter>Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Component.h">
+      <Filter>Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -270,17 +273,11 @@
     <Filter Include="Resources">
       <UniqueIdentifier>{80421e15-f6df-4f08-b76a-a72deab76c48}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GameLogic">
-      <UniqueIdentifier>{acd3b222-dd3a-41f8-ae4d-d7d80aaa4e94}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Material">
       <UniqueIdentifier>{fe425724-a589-420a-a7f9-51204adb88b2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Texture">
       <UniqueIdentifier>{57927666-b0f5-4a8c-b485-af27871e0c17}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="FrameBuffer">
-      <UniqueIdentifier>{30261590-e2a0-4951-9eb0-74fedfa75520}</UniqueIdentifier>
     </Filter>
     <Filter Include="GameObject">
       <UniqueIdentifier>{db3c3bfc-a187-47af-8ac0-39e3b51d976f}</UniqueIdentifier>
@@ -320,6 +317,12 @@
     </Filter>
     <Filter Include="Component\UI">
       <UniqueIdentifier>{3cb8fd5a-e153-4745-bfd9-bc83991ef6d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rendering">
+      <UniqueIdentifier>{30261590-e2a0-4951-9eb0-74fedfa75520}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event">
+      <UniqueIdentifier>{acd3b222-dd3a-41f8-ae4d-d7d80aaa4e94}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

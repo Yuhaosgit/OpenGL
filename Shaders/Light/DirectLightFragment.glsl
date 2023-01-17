@@ -4,9 +4,9 @@ uniform sampler2D ColorRoughnessTex;
 uniform sampler2D normalMetallicTex;
 uniform sampler2D depthTex;
 uniform sampler2D shadowTex;
-uniform sampler2D LUT;  
+//uniform sampler2D LUT;  
 
-uniform samplerCube prefilterMap;
+//uniform samplerCube prefilterMap;
 uniform samplerCube enviDiffuseTex;
 
 uniform vec2 pixelSize;
@@ -172,7 +172,7 @@ void main(void) {
 	vec4 lightSpace = shadowMatrix * vec4(worldPos, 1.0);
 	vec3 lightCoord = (lightSpace.xyz / lightSpace.w) * 0.5 + 0.5;
 
-	float visibility = clamp(PCSS(lightCoord, lightWidth), 0.2, 1.0);
+	float visibility = clamp(PCSS(lightCoord, lightWidth), 0.3, 1.0);
 	if (lightCoord.z > 1.0)
 		visibility = 1.0;
 	

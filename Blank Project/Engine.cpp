@@ -1,8 +1,8 @@
-#include "Renderer.h"
+#include "Engine.h"
 #include "../nclgl/RenderPass.h"
 #include "../nclgl/UI.h"
 
-Renderer::Renderer(Win32Window& parent) :OGLRenderer(parent) {
+Engine::Engine(Win32Window& parent) :OGLRenderer(parent) {
 	root = new GameObject("Root");
 	UI::initialization();
 
@@ -14,6 +14,7 @@ Renderer::Renderer(Win32Window& parent) :OGLRenderer(parent) {
 		}
 	};
 	ScriptStart();
+	deferredPipeline = new DeferredPipeline(camera);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -24,13 +25,14 @@ Renderer::Renderer(Win32Window& parent) :OGLRenderer(parent) {
 	init = true;
 }
 
-Renderer::~Renderer() {
+Engine::~Engine() {
 	Importer::ReleaseAllResources();
 	delete root;
+	delete deferredPipeline;
 	UI::terminate();
 }
 
-void Renderer::UpdateScene(const float& dt) {
+void Engine::UpdateScene(const float& dt) {
 	auto UpdateScript = [&]() {
 		for (auto script : BaseScript::scripts) {
 			script.lock()->Update();
@@ -41,11 +43,7 @@ void Renderer::UpdateScene(const float& dt) {
 	camera->UpdateCamera();
 }
 
-void Renderer::RenderScene() {
-	RenderPass<ShadowPass>().Pass(camera.get());
-	RenderPass<GbufferPass>().Pass(camera.get());
-	RenderPass<DirectLightPass>().Pass(camera.get());
-	RenderPass<CombinePass>().Pass(camera.get());
-
+void Engine::RenderScene() {
+	deferredPipeline->Render();
 	UI::Render();
 }

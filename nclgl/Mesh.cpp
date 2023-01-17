@@ -1,5 +1,7 @@
 #include "Mesh.h"
 #include "Matrix2.h"
+#include "Texture.h"
+
 #include <thread>
 
 using std::string;
@@ -41,6 +43,13 @@ Mesh::~Mesh(void)	{
 }
 
 void Mesh::Draw()	{
+	auto ClearTexture = []() {
+		while (!Texture::activeTextures.empty()) {
+			Texture::activeTextures.back()->DetachFromGPU();
+			Texture::activeTextures.pop_back();
+		}
+	};
+
 	glBindVertexArray(arrayObject);
 	if(bufferObject[INDEX_BUFFER]) {
 		glDrawElements(type, numIndices, GL_UNSIGNED_INT, 0);
@@ -49,6 +58,7 @@ void Mesh::Draw()	{
 		glDrawArrays(type, 0, numVertices);
 	}
 	glBindVertexArray(0);	
+	ClearTexture();
 }
 
 Mesh* Mesh::GenerateQuad()	{

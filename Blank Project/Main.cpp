@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include "Engine.h"
 
 int main(){
 	Window* windows = Window::CreateGameWindow("Opengl", 1280, 720);
@@ -7,7 +7,7 @@ int main(){
 		return -1;
 	}
 	
-	if(!Renderer::instance((Win32Window*)windows)->HasInitialised()) {
+	if(!Engine::instance((Win32Window*)windows)->HasInitialised()) {
 		return -1;
 	}
 
@@ -15,9 +15,9 @@ int main(){
 	windows->ShowOSPointer(true);
 
 	while(windows->UpdateWindow()  && !Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)){
-		Renderer::instance()->UpdateScene(Window::GetTimer()->GetTimeDeltaSeconds());
-		Renderer::instance()->RenderScene();
-		Renderer::instance()->SwapBuffers();
+		Engine::instance()->UpdateScene(Window::GetTimer()->GetTimeDeltaSeconds());
+		Engine::instance()->RenderScene();
+		Engine::instance()->SwapBuffers();
 	}
 	return 0;
 }

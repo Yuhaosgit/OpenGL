@@ -2,11 +2,11 @@
 #include <random>
 #include <ctime>
 
-#include "Renderer.h"
+#include "Engine.h"
 #include "PositionData.h"
 #include "../nclgl/Skybox.h"
 
-GameObject* Renderer::Instantiate(std::shared_ptr<Prefab> prefab, Vector3 position, GameObject* parent) {
+GameObject* Engine::Instantiate(std::shared_ptr<Prefab> prefab, Vector3 position, GameObject* parent) {
 	GameObject* instance = new GameObject();
 	if (parent == nullptr)
 		parent = root;
@@ -36,7 +36,7 @@ GameObject* Renderer::Instantiate(std::shared_ptr<Prefab> prefab, Vector3 positi
 	return instance;
 }
 
-GameObject* Renderer::Instantiate(std::shared_ptr<Component> component, Vector3 position, GameObject* parent) {
+GameObject* Engine::Instantiate(std::shared_ptr<Component> component, Vector3 position, GameObject* parent) {
 	GameObject* instance = new GameObject();
 	if (parent == nullptr)
 		parent = root;
@@ -47,7 +47,7 @@ GameObject* Renderer::Instantiate(std::shared_ptr<Component> component, Vector3 
 	return instance;
 }
 
-GameObject* Renderer::Instantiate(Vector3 position, GameObject* parent) {
+GameObject* Engine::Instantiate(Vector3 position, GameObject* parent) {
 	GameObject* instance = new GameObject();
 	if (parent == nullptr)
 		parent = root;
@@ -58,7 +58,7 @@ GameObject* Renderer::Instantiate(Vector3 position, GameObject* parent) {
 }
 
 
-void Renderer::Initialize() {
+void Engine::Initialize() {
 	auto ImportPrefab = []() {
 		Importer::LoadPrefab("Cube");
 		Importer::LoadPrefab("Plane");
@@ -80,8 +80,8 @@ void Renderer::Initialize() {
 
 	auto ImportBakedTexture = []() {
 		Importer::LoadCubemap("..\\Baked\\EnviDiffuse");
-		Importer::LoadPNG("..\\Baked\\Specular\\LUT.png");
-		Importer::LoadCubemap("..\\Baked\\Specular\\Prefilter\\mipmap0");
+		//Importer::LoadPNG("..\\Baked\\Specular\\LUT.png");
+		//Importer::LoadCubemap("..\\Baked\\Specular\\Prefilter\\mipmap0");
 	};
 
 	auto CreateCommonMaterial = []() {
@@ -91,29 +91,7 @@ void Renderer::Initialize() {
 
 		auto directLightMaterial = std::make_shared<Material>();
 		directLightMaterial->shader = Importer::GetShader("DirectLight");
-		directLightMaterial->SetTexture("ColorRoughnessTex", FrameBuffer<GeometryFBO>::instance()->colorTarget);
-		directLightMaterial->SetTexture("normalMetallicTex", FrameBuffer<GeometryFBO>::instance()->normalTarget);
-		directLightMaterial->SetTexture("depthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
-		directLightMaterial->SetTexture("shadowTex", FrameBuffer<ShadowFBO>::instance()->depthTarget);
 		Importer::SetMaterial("DirectLightMaterial", directLightMaterial);
-
-		auto combineMaterial = std::make_shared<Material>();
-		combineMaterial->shader = Importer::GetShader("Combine");
-		combineMaterial->SetTexture("directLightTex", FrameBuffer<LightFBO>::instance()->PBRTarget);
-		combineMaterial->SetTexture("depthTex", FrameBuffer<GeometryFBO>::instance()->stencilDepthTarget);
-		Importer::SetMaterial("CombineMaterial", combineMaterial);
-
-		auto environmentDiffuseMaterial = std::make_shared<Material>();
-		environmentDiffuseMaterial->shader = Importer::GetShader("IBLDiifuse");
-		Importer::SetMaterial("EnvironmentDiffuseMaterial", environmentDiffuseMaterial);
-
-		auto specularPrefilterMaterial = std::make_shared<Material>();
-		specularPrefilterMaterial->shader = Importer::GetShader("IBLSpecularPrefilter");
-		Importer::SetMaterial("SpecularPrefilterMaterial", specularPrefilterMaterial);
-
-		auto specularLUTMaterial = std::make_shared<Material>();
-		specularLUTMaterial->shader = Importer::GetShader("IBLSpecularLUT");
-		Importer::SetMaterial("SpecularLUTMaterial", specularLUTMaterial);
 	};
 
 	ImportPrefab();
@@ -122,7 +100,7 @@ void Renderer::Initialize() {
 	CreateCommonMaterial();
 }
 
-void Renderer::SetEnvironment() {
+void Engine::SetEnvironment() {
 	auto CreateDefaultCamera = [&]() {
  		camera = std::make_shared<Camera>();
 		GameObject* mainCamera = Instantiate(camera);
@@ -155,13 +133,12 @@ void Renderer::SetEnvironment() {
 
 	auto CreateLights = [&]() {
 		auto directLight = Instantiate(std::make_shared<Light>());
-		directLight->GetComponent<Light>()->shadowOpen = true;
+		directLight->GetComponent<Light>()->OpenShadow();
 		directLight->GetComponent<Transform>()->SetRotate(Quaternion::AxisAngleToQuaterion(60, -100, 0));
 	};
 
 	auto GlobalIlluminate = [&]() {
-		auto gi = Instantiate();
-		gi->AddComponent(std::make_shared<IBL>());
+
 	};
 
 	auto CreatePanel = [&]() {

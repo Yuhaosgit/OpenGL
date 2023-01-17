@@ -1,165 +1,153 @@
 #include "RenderPass.h"
-#include "FrameBuffer.h"
 #include "GameObject.h"
-#include "Importer.h"
 #include "Skybox.h"
 
-#pragma region ShadowPass
-void ShadowPass::RenderPreset() {
-	FrameBuffer<ShadowFBO>().instance()->Bind();
+void ShadowPass::Pass(Camera* camera) {
+	auto RenderPreset = []() {
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glCullFace(GL_FRONT);
+	};
 
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glViewport(0, 0, ShadowMapSize, ShadowMapSize);
-	glCullFace(GL_FRONT);
-}
+	auto RenderFunc = [&]() {
+		for (auto light : camera->lightList) {
+			if (!light.lock()->IfShadowCast())
+				continue;
 
-void ShadowPass::RenderFunction(Camera* camera) {
-	for (auto light : camera->lightList) {
-		if (!light.lock()->shadowOpen)
-			continue;
+			light.lock()->shadowBuffer->BindFrameBuffer();
+			glViewport(0, 0, light.lock()->ShadowSize, light.lock()->ShadowSize);
+			Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
 
-		Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
-		for (auto shadowObj : light.lock()->shadowList) {
-			Material::modelMatrix = shadowObj.lock()->gameObject->GetComponent<Transform>()->GetModelMatrix();
-			shadowObj.lock()->RenderShadow();
+			for (auto shadowObj : light.lock()->shadowList) {
+				Material::modelMatrix = shadowObj.lock()->gameObject->GetComponent<Transform>()->GetModelMatrix();
+				shadowObj.lock()->RenderShadow();
+			}
 		}
-	}
+	};
+
+	auto RenderAfterSet = [&]() {
+		glViewport(0, 0, camera->width, camera->height);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glCullFace(GL_BACK);
+	};
+
+	RenderPreset();
+	RenderFunc();
+	RenderAfterSet();
 }
 
-void ShadowPass::RenderAfterSet() {
-	glViewport(0, 0, OGLRenderer::GetCurrentWidth(), OGLRenderer::GetCurrentHeight());
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glCullFace(GL_BACK);
-}
-#pragma endregion
+void GbufferPass::Pass(Camera* camera) {
+	auto RenderPreset = []() {
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-#pragma region Gbuffer
-void GbufferPass::RenderPreset() {
-	FrameBuffer<GeometryFBO>().instance()->Bind();
+		glDepthFunc(GL_LESS);
 
-	glStencilMask(0xFF);
-	glStencilFunc(GL_ALWAYS, 1, 0xFF);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glDisable(GL_BLEND);
+	};
 
-	glDepthFunc(GL_LESS);
+	auto RenderFunc = [&]() {
+		Material::projMatrix = camera->GetProjMatrix();
+		Material::viewMatrix = camera->GetViewMatrix();
 
-	glDisable(GL_BLEND);
-}
+		for (auto opaque : camera->opaqueList) {
+			Material::modelMatrix = opaque.lock()->gameObject->GetComponent<Transform>()->GetModelMatrix();
+			opaque.lock()->Render();
+		}
+	};
 
-void GbufferPass::RenderFunction(Camera* camera) {
-	Material::projMatrix = camera->GetProjMatrix();
-	Material::viewMatrix = camera->GetViewMatrix();
-
-	for (auto opaque : camera->opaqueList) {
-		Material::modelMatrix = opaque.lock()->gameObject->GetComponent<Transform>()->GetModelMatrix();
-		opaque.lock()->Render();
-	}
+	RenderPreset();
+	RenderFunc();
 }
 
-void GbufferPass::RenderAfterSet() {
+void DirectLightPass::Pass(Camera* camera) {
+	auto RenderPreset = []() {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
 
-}
-#pragma endregion
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
 
-#pragma region Decal
-void DecalPass::RenderPreset() {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
+		glStencilMask(0x00);
+		glStencilFunc(GL_EQUAL, 1, 0xff);
+	};
 
-void DecalPass::RenderFunction(Camera* camera) {
-	//for (int i = 0; i < camera->opaqueList.size(); ++i) {
-	//	if (camera->visibleObject[i].lock()->decal != nullptr)
-	//		camera->visibleObject[i].lock()->decal->Render();
-	//}
-}
+	auto RenderFunc = [&]() {
+		for (auto light : camera->lightList) {
+			if (light.lock()->GetLightType() != LightType::Direct)
+				continue;
 
-void DecalPass::RenderAfterSet() {
-	glDisable(GL_BLEND);
-}
-#pragma endregion
+			auto lightMat = light.lock()->material.lock();
 
-#pragma region Light
-void DirectLightPass::RenderPreset() {
-	GeometryFBO* gBuffer = FrameBuffer<GeometryFBO>().instance();
-	LightFBO* lightBuffer = FrameBuffer<LightFBO>().instance();
-	lightBuffer->Bind();
-	CopyRenderTexture(gBuffer->stencilDepthTarget, lightBuffer->stencilDepthTarget, RenderTextureFormat::STENCIL);
+			lightMat->SetVector2("pixelSize", Vector2(1.0f / camera->width, 1.0f / camera->height));
+			lightMat->SetVector3("cameraPos", camera->gameObject->GetComponent<Transform>()->GetPosition());
+			lightMat->SetMatrix4("inverseProjView", (camera->GetProjMatrix() * camera->GetViewMatrix()).Inverse());
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
+			lightMat->SetFloat("lightWidth", light.lock()->lightWidth);
+			lightMat->SetFloat("nearPlane", light.lock()->nearPlane);
 
-	glDepthMask(GL_FALSE);
-	glDepthFunc(GL_ALWAYS);
+			lightMat->SetFloat("lightIntensity", light.lock()->intensity);
+			lightMat->SetVector4("lightColour", light.lock()->color);
+			auto direct = light.lock()->gameObject->GetComponent<Transform>()->GetRotate().RotationMatrix();
+			lightMat->SetVector3("lightOrientation", Vector3(direct.values[2], direct.values[6], direct.values[10]));
 
-	glStencilMask(0x00);
-	glStencilFunc(GL_EQUAL, 1, 0xff);
-}
+			lightMat->SetTexture("ColorRoughnessTex", colorRoughnessBuffer.lock());
+			lightMat->SetTexture("normalMetallicTex", normalMetallicBuffer.lock());
+			lightMat->SetTexture("depthTex", stencilDepthBuffer.lock());
+			lightMat->SetTexture("shadowTex", light.lock()->shadowBuffer->GetRenderTexture("shadowTex"));
+			  
+			lightMat->SetTexture("enviDiffuseTex", Importer::GetTexture("EnviDiffuse"));
+			//lightMat->SetTexture("prefilterMap", Importer::GetTexture("mipmap0"));
+			//lightMat->SetTexture("LUT", Importer::GetTexture("LUT"));
 
-void DirectLightPass::RenderFunction(Camera* camera) {
-	for (auto light : camera->lightList) {
-		if (light.lock()->GetLightType() != LightType::Direct)
-			continue;
+			Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
+			light.lock()->Render();
+		}
+	};
 
-		auto lightMat = light.lock()->material.lock();
+	auto RenderAfterSet = [&]() {
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
 
-		lightMat->SetVector2("pixelSize", Vector2(1.0f / camera->width, 1.0f / camera->height));
-		lightMat->SetVector3("cameraPos", camera->gameObject->GetComponent<Transform>()->GetPosition());
-		lightMat->SetMatrix4("inverseProjView", (camera->GetProjMatrix() * camera->GetViewMatrix()).Inverse());
+		glDisable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		glStencilFunc(GL_ALWAYS, 1, 0xff);
+	};
 
-		lightMat->SetFloat("lightWidth", light.lock()->lightWidth);
-		lightMat->SetFloat("nearPlane", light.lock()->nearPlane);
-
-		lightMat->SetFloat("lightIntensity", light.lock()->intensity);
-		lightMat->SetVector4("lightColour", light.lock()->color);
-		auto direct = light.lock()->gameObject->GetComponent<Transform>()->GetRotate().RotationMatrix();
-		lightMat->SetVector3("lightOrientation", Vector3(direct.values[2], direct.values[6], direct.values[10]));
-
-		lightMat->SetTexture("enviDiffuseTex", Importer::GetTexture("EnviDiffuse"));
-		lightMat->SetTexture("prefilterMap", Importer::GetTexture("mipmap0"));
-		lightMat->SetTexture("LUT", Importer::GetTexture("LUT"));
-
-		Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
-		light.lock()->Render();
-	}
+	RenderPreset();
+	RenderFunc();
+	RenderAfterSet();
 }
 
-void DirectLightPass::RenderAfterSet() {
-	glDepthFunc(GL_LESS);
-	glDepthMask(GL_TRUE);
+void CombinePass::Pass(Camera* camera) {
+	auto RenderPreset = []() {
+		glDepthFunc(GL_ALWAYS);
+	};
 
-	glDisable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	auto RenderFunc = [&]() {
+		Material::projMatrix = camera->GetProjMatrix();
+		Material::viewMatrix = camera->GetViewMatrix();
 
-	glStencilFunc(GL_ALWAYS, 1, 0xff);
-}
-#pragma endregion
+		auto skyboxTex = Skybox::skyboxTexture;
+		material->SetTexture("cubeTex", skyboxTex.lock());
+		material->SetTexture("directLightTex", opaqueTex.lock());
+		material->SetTexture("depthTex", depthTex.lock());
 
-#pragma region Combination
-void CombinePass::RenderPreset() {
-	FrameBuffer<ScreenFBO>().instance()->Bind();
+		material->SubmitData(false, true, true, false);
+		Importer::GetMesh("Plane")->Draw();
+	};
 
-	glDepthFunc(GL_ALWAYS);
-}
+	auto RenderAfterSet = [&]() {
+		glDepthFunc(GL_LESS);
+	};
 
-void CombinePass::RenderFunction(Camera* camera) {
-	Material::projMatrix = camera->GetProjMatrix();
-	Material::viewMatrix = camera->GetViewMatrix();
-
-	auto skyboxTex = Skybox::skyboxTexture.lock();
-	Importer::GetMaterial("CombineMaterial")->SetTexture("cubeTex", skyboxTex);
-
-	Importer::GetMaterial("CombineMaterial")->SubmitData(false, true, true, false);
-	Importer::GetMesh("Plane")->Draw();
+	RenderPreset();
+	RenderFunc();
+	RenderAfterSet();
 }
 
-void CombinePass::RenderAfterSet() {
-	glDepthFunc(GL_LESS);
-}
-#pragma endregion
-
-#pragma region Global lighting
-Matrix4 captureViews[] = {
+const Matrix4 captureViews[] = {
    Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(1.0f,  0.0f,  0.0f),Vector3(0.0f, -1.0f,  0.0f)),
    Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(-1.0f,  0.0f,  0.0f), Vector3(0.0f, -1.0f,  0.0f)),
    Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  1.0f,  0.0f), Vector3(0.0f,  0.0f,  1.0f)),
@@ -167,93 +155,75 @@ Matrix4 captureViews[] = {
    Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f,  1.0f), Vector3(0.0f, -1.0f,  0.0f)),
    Matrix4::BuildViewMatrix(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f, -1.0f), Vector3(0.0f, -1.0f,  0.0f))
 };
-//enviornment diffuse
-void EnvironmentDiffusePass::RenderPreset() {
-	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
-	EnviMapBuffer->Bind();
 
-	int size = EnviMapBuffer->diffuseResolution;
-	glViewport(0, 0, size, size);
-}
+void EnvironmentDiffusePass::Pass(Camera* camera) {
+	auto RenderPreset = [&]() {
+		glViewport(0, 0, camera->width, camera->height);
+	};
 
-void EnvironmentDiffusePass::RenderFunction(Camera* camera) {
-	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
-	auto mat = Importer::GetMaterial("EnvironmentDiffuseMaterial");
+	auto RenderFunc = [&]() {
+		auto mat = Importer::GetMaterial("EnvironmentDiffuseMaterial");
+		mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
+		Material::projMatrix = camera->GetProjMatrix();
 
-	mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
-	Material::projMatrix = camera->GetProjMatrix();
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		Material::viewMatrix = captureViews[i];
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnviMapBuffer->environmentTarget->GetTextureContent(), 0);
-		glDrawBuffer(GL_COLOR_ATTACHMENT0);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		mat->SubmitData(false, true, true, false);
-		Importer::GetMesh("Plane")->Draw();
-	}
-}
-
-void EnvironmentDiffusePass::RenderAfterSet() {
-
-}
-
-//specular pre filtering
-void SpecularPrefilterPass::RenderPreset() {
-	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
-	EnviMapBuffer->Bind();
-
-	int size = EnviMapBuffer->specularResolution;
-	glViewport(0, 0, size, size);
-}
-void SpecularPrefilterPass::RenderFunction(Camera* camera) {
-	auto EnviMapBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
-	auto mat = Importer::GetMaterial("SpecularPrefilterMaterial");
-
-	mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
-	for (int mipLevel = 0; mipLevel < maxMipLevel; ++mipLevel)
-	{
-		int mipWidth = EnviMapBuffer->specularResolution * std::pow(0.5, mipLevel);
-		int mipHeight = EnviMapBuffer->specularResolution * std::pow(0.5, mipLevel);
-		camera->SetSize(mipWidth, mipHeight);
-		glViewport(0, 0, mipWidth, mipHeight);
-
-		float roughness = static_cast<float>(mipLevel) / static_cast<float>(maxMipLevel - 1);
-		mat->SetFloat("roughness", roughness);
-		for (int i = 0; i < 6; ++i)
+		for (unsigned int i = 0; i < 6; ++i)
 		{
+			GIdiffuseBuffer.lock()->SetFrameBufferMipmapAndFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, IOstate::Write);
+
 			Material::viewMatrix = captureViews[i];
-
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, EnviMapBuffer->environmentTarget->GetTextureContent(), mipLevel);
-			glDrawBuffer(GL_COLOR_ATTACHMENT0);
-			glClear(GL_COLOR_BUFFER_BIT);
-
 			mat->SubmitData(false, true, true, false);
 			Importer::GetMesh("Plane")->Draw();
 		}
-	}
-}
-void SpecularPrefilterPass::RenderAfterSet() {
+	};
 
-}
-
-void SpecularLUTPass::RenderPreset() {
-	auto buffer = FrameBuffer<SpecularLUTFBO>().instance();
-
-	buffer->Bind();
-	glClear(GL_COLOR_BUFFER_BIT);
-	glViewport(0, 0, buffer->LUTResolution, buffer->LUTResolution);
+	RenderPreset();
+	RenderFunc();
 }
 
-void SpecularLUTPass::RenderFunction(Camera* camera) {
-	Importer::GetMaterial("SpecularLUTMaterial")->SubmitData();
-	Importer::GetMesh("Plane")->Draw();
+void SpecularPrefilterPass::Pass(Camera* camera) {
+	auto RenderPreset = [&]() {
+		glViewport(0, 0, camera->width, camera->width);
+	};
+
+	auto RenderFunc = [&]() {
+		auto mat = Importer::GetMaterial("SpecularPrefilterMaterial");
+
+		mat->SetTexture("environmentMap", Skybox::skyboxTexture.lock());
+		for (int mipLevel = 0; mipLevel < maxMipLevel; ++mipLevel)
+		{
+			int mipWidth = camera->width * std::pow(0.5, mipLevel);
+			int mipHeight = camera->width * std::pow(0.5, mipLevel);
+			camera->SetSize(mipWidth, mipHeight);
+			glViewport(0, 0, mipWidth, mipHeight);
+
+			float roughness = static_cast<float>(mipLevel) / static_cast<float>(maxMipLevel - 1);
+			mat->SetFloat("roughness", roughness);
+			for (int i = 0; i < 6; ++i)
+			{
+				GIspecularPrefilter.lock()->
+					SetFrameBufferMipmapAndFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mipLevel, IOstate::Write);
+
+				Material::viewMatrix = captureViews[i];
+				mat->SubmitData(false, true, true, false);
+				Importer::GetMesh("Plane")->Draw();
+			}
+		}
+	};
+
+	RenderPreset();
+	RenderFunc();
 }
 
-void SpecularLUTPass::RenderAfterSet() {
+void SpecularLUTPass::Pass(Camera* camera) {
+	auto RenderPreset = [&]() {
+		glViewport(0, 0, camera->width, camera->height);
+	};
 
+	auto RenderFunc = [&]() {
+		Importer::GetMaterial("SpecularLUTMaterial")->SubmitData();
+		Importer::GetMesh("Plane")->Draw();
+	};
+
+	RenderPreset();
+	RenderFunc();
 }
-#pragma endregion

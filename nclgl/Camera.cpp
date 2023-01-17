@@ -1,5 +1,4 @@
 #include "Camera.h"
-#include "OGLRenderer.h"
 #include "GameObject.h"
 
 #include <algorithm>
@@ -32,7 +31,7 @@ void Camera::UpdateViewMatrix() {
 }
 
 void Camera::SetProjMatrix() {
-	float aspect = width / height;
+	float aspect = static_cast<float>(width) / static_cast<float>(height);
 
 	projMatrix = Matrix4::Perspective(nearPlane, farPlane, aspect, FOV);
 }
@@ -55,13 +54,13 @@ void Camera::UpdateList() {
 	auto UpdateLightShadow = [&]() {
 		for (auto light : lightList) {
 			light.lock()->shadowList.clear();
-			if (!light.lock()->shadowOpen)
+			if (!light.lock()->IfShadowCast())
 				continue;
 			if (light.lock()->GetLightType() == LightType::Direct) {
 				auto transform = light.lock()->gameObject->GetComponent<Transform>();
 				auto direction = transform->GetRotate().RotationMatrix().Forward();
 
-				light.lock()->lightProjMatrix = Matrix4::Orthographic(0.1, 50, 50, -50, 50, -50);
+				light.lock()->lightProjMatrix = Matrix4::Orthographic(0.1f, 50, 50, -50, 50, -50);
 				light.lock()->lightViewMatrix = Matrix4::BuildViewMatrix(direction * 20, Vector3(0, 0, 0));
 			
 				for (int i = 1; i < MeshRender::meshRenders.size(); ++i) {

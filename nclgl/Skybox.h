@@ -1,8 +1,8 @@
 #pragma once
 #include <array>
 #include "Component.h"
-#include "Texture.h"
 
+class TextureCube;
 class Skybox {
 public:
 	Skybox() = delete;

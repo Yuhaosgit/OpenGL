@@ -23,11 +23,12 @@
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Decal.cpp" />
     <ClCompile Include="Exporter.cpp" />
-    <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Animation.cpp" />
-    <ClCompile Include="GI.cpp" />
+    <ClCompile Include="ImageLoader.cpp" />
+    <ClCompile Include="LightProbe.cpp" />
     <ClCompile Include="MeshRender.cpp" />
     <ClCompile Include="Panel.cpp" />
+    <ClCompile Include="ReflectProbe.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ShowFPS.cpp" />
@@ -35,7 +36,6 @@
     <ClCompile Include="Texture.cpp">
       <DeploymentContent>true</DeploymentContent>
     </ClCompile>
-    <ClCompile Include="GameLogic.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Importer.cpp" />
@@ -68,9 +68,12 @@
     <ClInclude Include="Decal.h" />
     <ClInclude Include="Exporter.h" />
     <ClInclude Include="FrameBuffer.h" />
-    <ClInclude Include="GI.h" />
+    <ClInclude Include="ImageLoader.h" />
+    <ClInclude Include="LightProbe.h" />
     <ClInclude Include="MeshRender.h" />
     <ClInclude Include="Panel.h" />
+    <ClInclude Include="Pipeline.h" />
+    <ClInclude Include="ReflectProbe.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Script.h" />
     <ClInclude Include="ScriptFiles.h" />
@@ -78,13 +81,11 @@
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="Slider.hpp" />
     <ClInclude Include="Text.hpp" />
-    <ClInclude Include="TextureGenerateFuncs.h" />
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Texture.h">
       <DeploymentContent>true</DeploymentContent>
     </ClInclude>
     <ClInclude Include="Event.h" />
-    <ClInclude Include="GameLogic.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Importer.h" />

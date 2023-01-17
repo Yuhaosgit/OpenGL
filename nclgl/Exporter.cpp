@@ -11,18 +11,14 @@ void Exporter::ExportCubemap(const std::string& path, RenderTexture* exportingTe
 	CheckFolderExist(path);
 	std::string name[6] = { "Left.png","Right.png","Up.png","Down.png","Front.png","Back.png" };
 
-	int width = exportingTexture->width * std::pow(0.5, mipLevel);
-	int height = exportingTexture->height * std::pow(0.5, mipLevel);
+	int width = exportingTexture->GetWidth() * (std::pow(0.5, mipLevel));
+	int height = exportingTexture->GetHeight() * (std::pow(0.5, mipLevel));
 	int dataSize = 3 * width * height;
 
-	auto indirectDiffuseBuffer = FrameBuffer<EnvironmentMapFBO>().instance();
 	for (int i = 0; i < 6; ++i) {
 		GLubyte* data = new GLubyte[dataSize];
-		FrameBuffer<EnvironmentMapFBO>().instance()->Bind();
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, indirectDiffuseBuffer->environmentTarget->GetTextureContent(), mipLevel);
-		glReadBuffer(GL_COLOR_ATTACHMENT0);
 
+		exportingTexture->SetFrameBufferMipmapAndFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, mipLevel, IOstate::Read);
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 		glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
 
@@ -36,17 +32,13 @@ void Exporter::ExportTexture2D
 (const std::string& path, const std::string& fileName, RenderTexture* exportingTexture, int mipLevel) {
 	CheckFolderExist(path);
 
-	int width = exportingTexture->width * std::pow(0.5, mipLevel);
-	int height = exportingTexture->height * std::pow(0.5, mipLevel);
+	int width = exportingTexture->GetWidth() * std::pow(0.5, mipLevel);
+	int height = exportingTexture->GetHeight() * std::pow(0.5, mipLevel);
 	int dataSize = 3 * width * height;
 
-	auto specularLUTBuffer = FrameBuffer<SpecularLUTFBO>().instance();
 	GLubyte* data = new GLubyte[dataSize];
-	specularLUTBuffer->Bind();
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, specularLUTBuffer->LUT_Target->GetTextureContent(), mipLevel);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
+	exportingTexture->SetFrameBufferMipmapAndFace(GL_TEXTURE_2D, mipLevel, IOstate::Read);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
 

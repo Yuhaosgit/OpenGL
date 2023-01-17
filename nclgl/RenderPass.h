@@ -1,6 +1,10 @@
 #pragma once
 #include <memory>
 #include "Camera.h"
+#include "Importer.h"
+#include "Material.h"
+
+class Material;
 
 template <typename T>
 class RenderPass {
@@ -26,88 +30,87 @@ T* RenderPass<T>::target;
 class RenderPassPrototype {
 	friend class RenderPass<RenderPassPrototype>;
 public:
-	void Pass(Camera* camera) {
-		RenderPreset();
-		RenderFunction(camera);
-		RenderAfterSet();
-	}
-protected:
 	RenderPassPrototype() = default;
-	virtual void RenderPreset() = 0;
-	virtual void RenderFunction(Camera* camera) = 0;
-	virtual void RenderAfterSet() = 0;
+	virtual void Pass(Camera* camera) = 0;
 };
 
 class ShadowPass :public RenderPassPrototype {
 	friend class RenderPass<ShadowPass>;
-
+public:
 	ShadowPass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
+	virtual void Pass(Camera* camera) override;
 };
 
 class GbufferPass :public RenderPassPrototype {
 	friend class RenderPass<GbufferPass>;
-
+public:
 	GbufferPass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
-};
-
-class DecalPass :public RenderPassPrototype {
-	friend class RenderPass<DecalPass>;
-
-	DecalPass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
+	virtual void Pass(Camera* camera) override;
 };
 
 class DirectLightPass :public RenderPassPrototype {
 	friend class RenderPass<DirectLightPass>;
+public:
+	std::weak_ptr<RenderTexture> colorRoughnessBuffer;
+	std::weak_ptr<RenderTexture> normalMetallicBuffer;
+	std::weak_ptr<RenderTexture> stencilDepthBuffer;
 
 	DirectLightPass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
+	virtual void Pass(Camera* camera) override;
 };
 
 class CombinePass :public RenderPassPrototype {
 	friend class RenderPass<CombinePass>;
+public:
+	std::weak_ptr<RenderTexture> opaqueTex;
+	std::weak_ptr<RenderTexture> depthTex;
 
-	CombinePass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
+	CombinePass() {
+		material = std::make_unique<Material>();
+		material->shader = Importer::GetShader("Combine");
+	}
+	std::unique_ptr<Material> material;
+
+	virtual void Pass(Camera* camera) override;
 };
 
+//global illuminate
+class RenderTexture;
 class EnvironmentDiffusePass :public RenderPassPrototype {
 	friend class RenderPass<EnvironmentDiffusePass>;
+public:
+	EnvironmentDiffusePass(){
+		material = std::make_unique<Material>();
+		material->shader = Importer::GetShader("IBLDiifuse");
+	}
+	std::unique_ptr<Material> material;
 
-	EnvironmentDiffusePass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
+	virtual void Pass(Camera* camera) override;
+	std::weak_ptr<RenderTexture> GIdiffuseBuffer;
 };
 
 class SpecularPrefilterPass :public RenderPassPrototype {
 	friend class RenderPass<SpecularPrefilterPass>;
-
-	SpecularPrefilterPass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
 public:
+	SpecularPrefilterPass() {
+		material = std::make_unique<Material>();
+		material->shader = Importer::GetShader("IBLSpecularPrefilter");
+	}
+	std::unique_ptr<Material> material;
+
+	virtual void Pass(Camera* camera) override;
 	const int maxMipLevel = 5;
+	std::weak_ptr<RenderTexture> GIspecularPrefilter;
 };
 
 class SpecularLUTPass :public RenderPassPrototype {
 	friend class RenderPass<SpecularLUTPass>;
+public:
+	SpecularLUTPass() {
+		material = std::make_unique<Material>();
+		material->shader = Importer::GetShader("IBLSpecularLUT");
+	}
+	std::unique_ptr<Material> material;
 
-	SpecularLUTPass() = default;
-	void RenderPreset() override;
-	void RenderFunction(Camera* camera) override;
-	void RenderAfterSet() override;
+	virtual void Pass(Camera* camera) override;
 };

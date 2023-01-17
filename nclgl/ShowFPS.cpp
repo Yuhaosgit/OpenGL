@@ -19,14 +19,14 @@ void ShowFPS::Start() {
 void ShowFPS::Update() {
 	auto panel = gameObject->GetComponent<Panel>();
 	panel->SetText("FPS", std::string("FPS: ") + 
-		std::to_string(static_cast<int>(1 / Window::GetTimer()->GetTimeDeltaSeconds())));
-	panel->SetSlider("LightWidth", &parallel_Light.lock()->lightWidth, 0.1, 7.0);
-	panel->SetSlider("NearPlane", &parallel_Light.lock()->nearPlane, 0.1, 10.0);
+		std::to_string(static_cast<int>(1.0f / Window::GetTimer()->GetTimeDeltaSeconds())));
+	panel->SetSlider("LightWidth", &parallel_Light.lock()->lightWidth, 0.1f, 7.0f);
+	panel->SetSlider("NearPlane", &parallel_Light.lock()->nearPlane, 0.1f, 10.0f);
 
-	panel->SetSlider("parallel-X", &parallelRotateX, 10.0, 80.0);
-	panel->SetSlider("parallel-Y", &parallelRotateY, 0.0, 360.0);
-	panel->SetSlider("intensity", &parallel_Light.lock()->intensity, 0.1, 100.0);
+	panel->SetSlider("parallel-X", &parallelRotateX, 10.0f, 80.0f);
+	panel->SetSlider("parallel-Y", &parallelRotateY, 0.0f, 360.0f);
+	panel->SetSlider("intensity", &parallel_Light.lock()->intensity, 0.1f, 100.0f);
 
 	parallel_Light.lock()->gameObject->GetComponent<Transform>()->
-		SetRotate(Quaternion::AxisAngleToQuaterion(parallelRotateX, parallelRotateY, 0));
+		SetRotate(Quaternion::AxisAngleToQuaterion(parallelRotateX, parallelRotateY, 0.0f));
 }

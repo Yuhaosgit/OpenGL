@@ -1,11 +1,6 @@
 #pragma once
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "Vector4.h"
-#include "Matrix4.h"
 #include "Component.h"
+#include "FrameBuffer.h"
 
 class Material;
 class Mesh;
@@ -32,19 +27,27 @@ public:
 	void SetLightType(LightType type);
 	LightType GetLightType() { return lightType; }
 
+	void OpenShadow();
+	void CloseShadow();
+
+	bool IfShadowCast() { return shadowOpen; }
+
 	Vector4 color;
 	float range;
 	float intensity = 2.0;
 	float lightWidth = 0.7f;
 	float nearPlane = 7.5f;
-
-	bool shadowOpen = false;
+	
+	const int ShadowSize = 2048;
 	Matrix4 lightViewMatrix;
 	Matrix4 lightProjMatrix;
 	std::vector<std::weak_ptr<MeshRender>> shadowList;
-
+	std::shared_ptr<FrameBuffer> shadowBuffer;
+	
 	std::weak_ptr<Material> material;
 private:
 	std::weak_ptr<Mesh> mesh;
 	LightType lightType;
+
+	bool shadowOpen = false;
 };

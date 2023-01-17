@@ -1,7 +1,7 @@
 #include "Terrain.h"
 #include "Importer.h"
 #include "Material.h"
-#define STB_IMAGE_IMPLEMENTATION    
+#include "ImageLoader.h"
 #include "stb_image.h"
 
 #include <iostream>
@@ -17,18 +17,17 @@ void Terrain::AddInstance(std::shared_ptr<Component> component) {
 }
 
 Terrain::Terrain(const std::string& name, const float& stretchFlat, const float& stretchHeight, const float& texScale) {
-	int channels;
 	auto path = Importer::FindFile("../Terrain", name);
+	auto image = ImageLoader::LoadPNG(path.c_str(), 1);
+	width = image.width;
+	height = image.height;
 
-	GLubyte* data = stbi_load(path.c_str(), &width, &height, &channels, 1);
-
-	if (!data) {
+	if (!image.data) {
 		std::cout << "Heightmap  can't load  file!\n";
 		return;
 	}
 
 	terrainMesh = std::make_shared<Mesh>();
-
 	mesh = terrainMesh;
 	int numVertices = width * height;
 
@@ -60,7 +59,7 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 		int start = dataSize * i;
 		int end = dataSize * (i + 1);
 		threads.push_back(std::thread([=]
-			{CalculateVertices(vertex_scale, texture_scale, dataSize * i, dataSize * (i + 1), data); }));
+			{CalculateVertices(vertex_scale, texture_scale, dataSize * i, dataSize * (i + 1), image.data); }));
 	}
 
 	for (std::thread& singleThread : threads) {
@@ -68,7 +67,7 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 			singleThread.join();
 	}
 
-	stbi_image_free(data);
+	image.Release();
 
 	auto CalculateTriangles = [&]() {
 		int i = 0;

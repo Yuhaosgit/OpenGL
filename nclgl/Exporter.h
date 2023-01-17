@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include "GI.h"
 
 class RenderTexture;
 

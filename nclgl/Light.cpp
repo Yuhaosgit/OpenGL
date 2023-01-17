@@ -39,3 +39,22 @@ void Light::Render() {
 	material.lock()->SubmitData();
 	mesh.lock()->Draw();
 }
+
+void Light::OpenShadow() {
+	shadowOpen = true;
+	shadowBuffer = std::make_shared<FrameBuffer>();
+
+	if (lightType == LightType::Direct) {
+		auto shadowMap = std::make_shared<RenderTexture>
+			(ShadowSize, ShadowSize, Dimension::Texture2D, RenderTextureFormat::DEPTH);
+		shadowMap->SetMagFilter(FilterMode::LINEAR);
+		shadowMap->SetMinFilter(FilterMode::LINEAR);
+
+		shadowBuffer->SetRenderTexture("shadowTex", shadowMap);
+	}
+}
+
+void Light::CloseShadow() {
+	shadowOpen = false;
+	shadowBuffer.reset();
+}

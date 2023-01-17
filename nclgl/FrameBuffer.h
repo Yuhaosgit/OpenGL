@@ -1,201 +1,127 @@
 #pragma once
-#include "OGLRenderer.h"
-#include "Material.h"
 #include <memory>
-#include <functional>
+#include <map>
+#include <string>
+#include <vector>
 
-#define ShadowMapSize 2048
+#include "Texture.h"
 
-template <typename T>
-class FrameBuffer {
+class FrameBuffer :public std::enable_shared_from_this<FrameBuffer> {
 public:
-	static_assert(std::is_base_of<FrameBufferPrototype, T>::value);
-	static T* instance() {
-		if (target == nullptr)
-			target = new T();
-		return target;
+	static void BindScreenFrameBuffer() {
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-private:
-	static T* target;
-};
 
-template <typename T>
-T* FrameBuffer<T>::target;
+	FrameBuffer() {
+		glGenFramebuffers(1, &buffer);
+	}
 
-class FrameBufferPrototype {
-public:
+	~FrameBuffer() {
+		for (auto target : targets) {
+			target.second->Delete();
+		}
+		targets.clear();
+		glDeleteFramebuffers(1, &buffer);
+	}
+
+	void BindFrameBuffer() {
+		Bind();
+		Clear();
+	}
+
 	void Bind() {
-		BindFrameBuffer();
-		ClearBuffer();
+		glBindFramebuffer(GL_FRAMEBUFFER, buffer);
+	}
+	void Clear() {
+		int clearMask = 0;
+		if (stencilExist) {
+			glStencilMask(0xFF);
+			clearMask |= GL_STENCIL_BUFFER_BIT;
+		}
+		if (depthExist)
+			clearMask |= GL_DEPTH_BUFFER_BIT;
+		if (!colorAttachments.empty())
+			clearMask |= GL_COLOR_BUFFER_BIT;
+
+		if (clearMask != 0)
+			glClear(clearMask);
 	}
 
-	friend void CopyRenderTexture
-	(std::shared_ptr<RenderTexture> read, std::shared_ptr<RenderTexture> draw, RenderTextureFormat bufferType);
-protected:
-	FrameBufferPrototype() = default;
-
-	void BindFrameBuffer();
-	virtual ~FrameBufferPrototype() { glDeleteFramebuffers(1, &content); }
-
-	virtual void GenerateFrameBuffer() = 0;
-	virtual void ClearBuffer() = 0;
-
-	GLuint content = 0;
-};
-
-class ShadowFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<ShadowFBO>;
-public:
-	std::shared_ptr<RenderTexture> depthTarget;
-private:
-	ShadowFBO() {
-		depthTarget = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
+	static void BlitColor(std::weak_ptr<RenderTexture> source, std::weak_ptr<RenderTexture> dest) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, source.lock()->frameBuffer->buffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.lock()->frameBuffer->buffer);
+		glBlitFramebuffer(0, 0, source.lock()->GetWidth(), source.lock()->GetHeight(), 0, 0, dest.lock()->GetWidth(), dest.lock()->GetHeight(), 
+			GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
-	~ShadowFBO() {}
 
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
+	static void BlitDepth(std::weak_ptr<RenderTexture> source, std::weak_ptr<RenderTexture> dest) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, source.lock()->frameBuffer->buffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.lock()->frameBuffer->buffer);
+		glBlitFramebuffer(0, 0, source.lock()->GetWidth(), source.lock()->GetHeight(), 0, 0, dest.lock()->GetWidth(), dest.lock()->GetHeight(),
+			GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	}
 
-class ScreenFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<ScreenFBO>;
+	static void BlitStencil(std::weak_ptr<RenderTexture> source, std::weak_ptr<RenderTexture> dest) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, source.lock()->frameBuffer->buffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.lock()->frameBuffer->buffer);
+		glBlitFramebuffer(0, 0, source.lock()->GetWidth(), source.lock()->GetHeight(), 0, 0, dest.lock()->GetWidth(), dest.lock()->GetHeight(),
+			GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	}
+
+	void SetRenderTexture(const std::string& name, std::shared_ptr<RenderTexture> target) {
+		Bind();
+		if (target->GetFormat() == RenderTextureFormat::DEPTH) {
+			BindTextureToFrameBuffer(GL_DEPTH_ATTACHMENT, target->GetDimension(), target->GetContent());
+			target->Attachment = GL_DEPTH_ATTACHMENT;
+
+			depthExist = true;
+		}
+		else if (target->GetFormat() == RenderTextureFormat::STENCIL_DEPTH) {
+			BindTextureToFrameBuffer(GL_DEPTH_ATTACHMENT, target->GetDimension(), target->GetContent());
+			BindTextureToFrameBuffer(GL_STENCIL_ATTACHMENT, target->GetDimension(), target->GetContent());
+			target->Attachment = GL_DEPTH_ATTACHMENT | GL_STENCIL_ATTACHMENT;
+
+			stencilExist = true;
+			depthExist = true;
+		}
+		else {
+			GLenum attachment = GL_COLOR_ATTACHMENT0 + colorAttachments.size();
+			BindTextureToFrameBuffer(attachment, target->GetDimension(), target->GetContent());
+			target->Attachment = attachment;
+
+			colorAttachments.emplace_back(attachment);
+			glDrawBuffers(colorAttachments.size(), colorAttachments.data());
+		}
+		target->frameBuffer = this;
+		targets.emplace(name, target);
+	}
+
+	std::shared_ptr<RenderTexture> GetRenderTexture(const std::string& name) {
+		auto iter = targets.find(name);
+		if (iter != targets.end())
+			return iter->second;
+		return nullptr;
+	}
+
 private:
-	ScreenFBO() {}
+	std::map<std::string, std::shared_ptr<RenderTexture>> targets;
+	std::vector<GLenum> colorAttachments;
+	bool depthExist = false;
+	bool stencilExist = false;
 	
-	void GenerateFrameBuffer() override {}
-	void ClearBuffer() override;
-};
+	GLuint buffer = 0;
 
-class GeometryFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<GeometryFBO>;
-public:
-	std::shared_ptr<RenderTexture> stencilDepthTarget;
-	std::shared_ptr<RenderTexture> colorTarget;
-	std::shared_ptr<RenderTexture> normalTarget;
-private:
-	GeometryFBO() {
-		stencilDepthTarget = std::make_shared<RenderTexture>();
-		colorTarget = std::make_shared<RenderTexture>();
-		normalTarget = std::make_shared<RenderTexture>();
+	void BindTextureToFrameBuffer(GLenum attachment, Dimension dimension, GLuint texture, int mipLevel = 0) {
+		if (dimension == Dimension::Texture2D)
+			glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, EnumToGLuint(dimension), texture, mipLevel);
 
-		GenerateFrameBuffer();
+		else if (dimension == Dimension::Cubemap) {
+			for (int i = 0; i < 6; ++i) {
+				glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture, mipLevel);
+			}
+		}
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			throw "FrameBuffer Initiate fail.";
+		}
 	}
-	~GeometryFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
-
-class DecalFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<DecalFBO>;
-public:
-	std::shared_ptr<RenderTexture> stencilDepthTarget;
-	std::shared_ptr<RenderTexture> colorTarget;
-	std::shared_ptr<RenderTexture> normalTarget;
-private:
-	DecalFBO() {
-		stencilDepthTarget = std::make_shared<RenderTexture>();
-		colorTarget = std::make_shared<RenderTexture>();
-		normalTarget = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
-	}
-	~DecalFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
-
-class LightFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<LightFBO>;
-public:
-	std::shared_ptr<RenderTexture> PBRTarget;
-	std::shared_ptr<RenderTexture> stencilDepthTarget;
-private:
-	LightFBO() {
-		PBRTarget = std::make_shared<RenderTexture>();
-		stencilDepthTarget = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
-	}
-	~LightFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
-
-class OITFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<OITFBO>;
-public:
-	std::shared_ptr<RenderTexture> accumulationTarget;
-	std::shared_ptr<RenderTexture> revealTarget;
-	std::shared_ptr<RenderTexture> depthTarget;
-private:
-	OITFBO() {
-		accumulationTarget = std::make_shared<RenderTexture>();
-		revealTarget = std::make_shared<RenderTexture>();
-		depthTarget = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
-	}
-	~OITFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
-
-class OutcomeFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<OutcomeFBO>;
-public:
-	std::shared_ptr<RenderTexture> colorTarget;
-private:
-	OutcomeFBO() {
-		colorTarget = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
-	}
-	~OutcomeFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
-
-class EnvironmentMapFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<EnvironmentMapFBO>;
-public:
-	std::shared_ptr<RenderTexture> environmentTarget;
-	int diffuseResolution = 128;
-	int specularResolution = 256;
-
-	void GenerateMipmap(int in_width, int in_height);
-private:
-	EnvironmentMapFBO() {
-		environmentTarget = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
-	}
-	~EnvironmentMapFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
-};
-
-class SpecularLUTFBO :public FrameBufferPrototype {
-	friend class FrameBuffer<SpecularLUTFBO>;
-public:
-	std::shared_ptr<RenderTexture> LUT_Target;
-	int LUTResolution = 512;
-
-private:
-	SpecularLUTFBO() {
-		LUT_Target = std::make_shared<RenderTexture>();
-
-		GenerateFrameBuffer();
-	}
-	~SpecularLUTFBO() {}
-
-	void GenerateFrameBuffer() override;
-	void ClearBuffer() override;
 };
