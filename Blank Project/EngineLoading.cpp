@@ -80,8 +80,10 @@ void Engine::Initialize() {
 
 	auto ImportBakedTexture = []() {
 		Importer::LoadCubemap("..\\Baked\\EnviDiffuse");
-		//Importer::LoadPNG("..\\Baked\\Specular\\LUT.png");
-		//Importer::LoadCubemap("..\\Baked\\Specular\\Prefilter\\mipmap0");
+		Importer::LoadTexture("..\\Baked\\Specular\\LUT.png", false);
+		Importer::LoadSpecularGI("..\\Baked\\Specular\\Prefilter");
+
+		Importer::GetTexture("LUT")->SetMinFilter(FilterMode::LINEAR);
 	};
 
 	auto CreateCommonMaterial = []() {

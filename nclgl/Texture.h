@@ -33,6 +33,7 @@ public:
 		maxMipLevel = width > 1 ? std::log2(in_width) : 0;
 		glGenTextures(1, &texture);
 	}
+
 	virtual ~Texture() {}
 	void Delete() { glDeleteTextures(1, &texture); }
 

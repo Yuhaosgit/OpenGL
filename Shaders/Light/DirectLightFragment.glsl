@@ -4,9 +4,9 @@ uniform sampler2D ColorRoughnessTex;
 uniform sampler2D normalMetallicTex;
 uniform sampler2D depthTex;
 uniform sampler2D shadowTex;
-//uniform sampler2D LUT;  
+uniform sampler2D LUT;  
 
-//uniform samplerCube prefilterMap;
+uniform samplerCube prefilterMap;
 uniform samplerCube enviDiffuseTex;
 
 uniform vec2 pixelSize;
@@ -23,12 +23,14 @@ uniform float nearPlane;
 
 uniform bool HDR;
 uniform bool enviDiffuseExist = true;
+uniform bool enviSpecularExist = true;
 
 layout(location = 0) out vec4 FinalColor;
 
 #define shadowPixelSize 1.0 / 2048.0
 #define PI 3.1415926
 #define saturateMediump(x) min(x, 65025.0)
+#define MAX_REFLECTION_LOD 4.0
 
 float pow5(float value){
 	float result = value * value;
@@ -144,18 +146,32 @@ vec3 DirectionalLightColor(float NoV, float NoL, float VoH, float NoH, float rou
 
 
 //**********************************indirect lighting*****************************************//
-vec3 F_Schlick_Roughtness(float NoV, vec3 F0, float roughness) {
+vec3 F_Schlick_Roughness(float NoV, vec3 F0, float roughness) {
     vec3 t = max(vec3(1.0 - roughness), F0);
     return F0 + (t - F0) * pow5(clamp(1.0 - NoV, 0.0, 1.0));
 }
 
 vec3 IndirectionalLightColor(vec3 normal, vec3 viewDir, float NoV, float roughness, float metallic, vec3 baseColor, vec3 F0){
-	if (!enviDiffuseExist)
-		return vec3(0.0, 0.0, 0.0);
-	vec3 irradiance = texture(enviDiffuseTex, reflect(-viewDir, normal)).rgb;
-	vec3 KS = F_Schlick_Roughtness(NoV, F0, roughness);
+	vec3 KS = F_Schlick_Roughness(NoV, F0, roughness);
+	vec3 KD = vec3(1.0) - KS;
+	KD *= (1.0 - metallic);
+	vec3 reflectView = reflect(-viewDir, normal);
 
-	return irradiance * baseColor * (vec3(1.0) - KS) * (1.0 - metallic);
+	//diffuse
+	vec3 GIdiffuse;
+	if (enviDiffuseExist){
+		vec3 irradiance = texture(enviDiffuseTex, reflectView).rgb;
+		GIdiffuse = irradiance * baseColor * KD;
+	}
+
+	//specular
+	vec3 GIspecular;
+	if (enviSpecularExist){
+		vec3 prefilteredColor = textureLod(prefilterMap, reflectView,  roughness * MAX_REFLECTION_LOD).rgb;   
+		vec2 envBRDF  = texture(LUT, vec2(max(NoV, 0.00001), roughness)).rg;
+		GIspecular = prefilteredColor * (KS * envBRDF.x + envBRDF.y);
+	}
+	return GIdiffuse + GIspecular;
 }
 //*******************************************************************************************//
 

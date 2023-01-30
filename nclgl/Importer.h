@@ -44,8 +44,9 @@ public:
 	static std::shared_ptr<Prefab> GetPrefab(const std::string& name);
 
 	//load texture
-	static std::string LoadTexture(const std::string& fileName);
+	static std::string LoadTexture(const std::string& fileName, bool flip = true);
 	static std::string LoadCubemap(const std::string& fileName);
+	static std::string LoadSpecularGI(const std::string& fileName);
 	static std::shared_ptr<Texture> GetTexture(const std::string& name);
 
 	//load mesh

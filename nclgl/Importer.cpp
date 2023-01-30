@@ -6,7 +6,6 @@
 #include <ctime>
 #include <iostream>
 #include <filesystem>
-#include <gli/gli.hpp>
 #include <algorithm>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -91,21 +90,20 @@ void Importer::LoadPrefab(const std::string& name) {
 		aiMaterial* fbxMaterial = scene->mMaterials[index];
 		aiString name;
 
-		fbxMaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &name);
-		if (name.length != 0)
-			model->textures.emplace_back(LoadTexture(name.C_Str()));
+		auto GenerateTexture = [&](aiTextureType type) {
+			fbxMaterial->GetTexture(type, 0, &name);
+			if (name.length != 0) {
+				std::string path = name.C_Str();
+				path = path.substr(path.find("\\Prefab") - 2);
+				path.replace(0, 2, "..");
+				model->textures.emplace_back(LoadTexture(path));
+			}
+		};
 
-		fbxMaterial->GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &name);
-		if (name.length != 0)
-			model->textures.emplace_back(LoadTexture(name.C_Str()));
-
-		fbxMaterial->GetTexture(aiTextureType::aiTextureType_METALNESS, 0, &name);
-		if (name.length != 0)
-			model->textures.emplace_back(LoadTexture(name.C_Str()));
-
-		fbxMaterial->GetTexture(aiTextureType::aiTextureType_SHININESS, 0, &name);
-		if (name.length != 0)
-			model->textures.emplace_back(LoadTexture(name.C_Str()));
+		GenerateTexture(aiTextureType::aiTextureType_DIFFUSE);
+		GenerateTexture(aiTextureType::aiTextureType_NORMALS);
+		GenerateTexture(aiTextureType::aiTextureType_METALNESS);
+		GenerateTexture(aiTextureType::aiTextureType_SHININESS);
 	};
 
 	if (scene->HasMeshes()) {
@@ -193,21 +191,10 @@ void Importer::SetMaterial(const std::string& name, std::shared_ptr<Material> ma
 	MaterialSet[name] = material;
 }
 
-std::string Importer::LoadTexture(const std::string& fileName) {
-	gli::texture tex = gli::load(fileName);
-	if (tex.empty()) {
-		std::cout << "The texture: " + fileName + " does not exist";
-		return "No File";
-	}
+std::string Importer::LoadTexture(const std::string& fileName, bool flip) {
 	std::string name = fileName.substr(fileName.find_last_of("\\") + 1);
-
-	auto Texture = gli::flip(tex);
-	gli::gl GL(gli::gl::PROFILE_GL33);
-	gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
-	GLenum Target = GL.translate(Texture.target());
-	GLuint TextureName = 0;
-
-	glm::tvec3<GLsizei> const Extent(Texture.extent());
+	name = name.substr(0, name.find('.'));
+	std::shared_ptr<Texture2D> texture;
 
 	auto IsColorTexture = [](std::string& str)->bool {
 		for (auto& c : str)
@@ -218,89 +205,92 @@ std::string Importer::LoadTexture(const std::string& fileName) {
 		return false;
 	};
 
-	auto TransformFormat_SRGB = [](gli::gl::internal_format in_format)->gli::gl::internal_format {
-		if (in_format == gli::gl::internal_format::INTERNAL_RGB_DXT1) {
-			return gli::gl::internal_format::INTERNAL_SRGB_DXT1;
+	auto MakeCompressedTexture = [&]() {
+		CompressedImage image(fileName, flip);
+		if (image.Empty()) {
+			std::cout << "The texture: " + fileName + " does not exist" << std::endl;
+			return;
 		}
-		else if (in_format == gli::gl::internal_format::INTERNAL_RGBA_DXT1) {
-			return gli::gl::internal_format::INTERNAL_SRGB_ALPHA_DXT1;
-		}
-		else if (in_format == gli::gl::internal_format::INTERNAL_RGBA_DXT3) {
-			return gli::gl::internal_format::INTERNAL_SRGB_ALPHA_DXT3;
-		}
-		else if (in_format == gli::gl::internal_format::INTERNAL_RGBA_DXT5) {
-			return gli::gl::internal_format::INTERNAL_SRGB_ALPHA_DXT5;
+		auto format = IsColorTexture(name) ? image.GetFormat(true) : image.GetFormat(false);
+
+		texture = std::make_shared<Texture2D>(image.GetWidth(0), image.GetHeight(0));
+		for (int i = 0; i < image.GetMipmapLevel(); ++i) {
+			texture->SetPixelData(image.GetData(i), image.GetDataSize(i), i, format);
 		}
 	};
 
-	auto format = IsColorTexture(name) ? TransformFormat_SRGB(Format.Internal) : Format.Internal;
-	auto texture = std::make_shared<Texture2D>(Extent.x, Extent.y);
+	auto MakeUncompressedTexture = [&]() {
+		UncompressedImage image(fileName, 3, flip);
+		if (image.Empty()) {
+			std::cout << "The texture: " + fileName + " does not exist";
+			return;
+		}
 
-	for (int level = 0; level < Texture.levels(); ++level) {
-		texture->SetPixelData(Texture.data(0, 0, level), static_cast<GLsizei>(Texture.size(level)), level, format);
-	}
+		texture = std::make_shared<Texture2D>(image.GetWidth(), image.GetHeight());
+		texture->SetPixelData(image.GetData(), 0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
+	};
+
+	auto imageFormat = fileName.substr(fileName.size() - 3);
+	if (imageFormat == "dds")
+		MakeCompressedTexture();
+	else if (imageFormat == "png")
+		MakeUncompressedTexture();
 
 	TextureSet[name] = texture;
     return name;
 }
 
-std::string Importer::LoadCubemap(const std::string& path) {
-	auto AddFiles = [path](std::vector<std::string>& fileNames)->bool {
-		std::string dir[6] = { "Left", "Right", "Up", "Down", "Front", "Back" };
-		for (int i = 0; i < 6; ++i) {
-			auto file = FindFile(path, dir[i]);
-			if (file.empty()) {
-				return false;
-			}
-			fileNames.emplace_back(file);
-		}
-		return true;
-	};
-
+std::vector<std::string> AddCubemapFiles(const std::string& path) {
 	std::vector<std::string> fileNames;
-	if (!AddFiles(fileNames)) {
+
+	std::string dir[6] = { "Left", "Right", "Up", "Down", "Front", "Back" };
+	for (int i = 0; i < 6; ++i) {
+		auto file = Importer::FindFile(path, dir[i]);
+		if (file.empty()) {
+			std::cout << "Can not find the File: " << file << std::endl;
+			fileNames.clear();
+			return fileNames;
+		}
+		fileNames.emplace_back(file);
+	}
+
+	return fileNames;
+}
+
+std::string Importer::LoadCubemap(const std::string& path) {
+	std::vector<std::string> fileNames = AddCubemapFiles(path);
+	if (fileNames.empty()) {
 		std::cout << path << " Cubemap Files can't be loaded.\n";
 		return "Load Fail";
 	}
 
 	auto LoadDSS = [&](std::shared_ptr<TextureCube> texture){
 		for (int i = 0; i < 6; ++i) {
-			//load image information
-			gli::texture Texture = (gli::load(fileNames[i]));
-			auto tex = gli::flip(Texture);
+			CompressedImage image(fileNames[i], false);
 
-			gli::gl GL(gli::gl::PROFILE_GL33);
-			gli::gl::format const Format = GL.translate(tex.format(), tex.swizzles());
-			GLenum Target = GL.translate(tex.target());
-			glm::tvec3<GLsizei> const Extent(tex.extent());
-
-			//test if load succeed
-			if (tex.empty()) {
+			if (image.Empty()) {
 				std::cout << "The texture: " + fileNames[i] + " does not exist";
 				return nullptr;
 			}
 
-			texture->SetSize(Extent.x, Extent.y);
+			texture->SetSize(image.GetWidth(0), image.GetHeight(0));
 			texture->SetPixelData(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				tex.data(0, 0, 0), (GLsizei)tex.size(0), 0, GL_COMPRESSED_SRGB_S3TC_DXT1_EXT);
-
-			tex.clear();
+				image.GetData(0), image.GetDataSize(0), 0, GL_COMPRESSED_SRGB_S3TC_DXT1_EXT);
 		}
 	};
 
 	auto LoadPNG = [&](std::shared_ptr<TextureCube> texture) {
 		for (int i = 0; i < 6; ++i) {
-			auto image = ImageLoader::LoadPNG(fileNames[i], 3);
+			UncompressedImage image(fileNames[i], 3, false);
 
-			if (!image.data) {
+			if (!image.GetData()) {
 				std::cout << "The texture: " + fileNames[i] + " does not exist";
 				return nullptr;
 			}
 
-			texture->SetSize(image.width, image.height);
-			texture->SetPixelData(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, image.data,
+			texture->SetSize(image.GetWidth(), image.GetHeight());
+			texture->SetPixelData(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, image.GetData(),
 				0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
-			image.Release();
 		}
 	};
 
@@ -309,6 +299,36 @@ std::string Importer::LoadCubemap(const std::string& path) {
 		LoadDSS(texture);
 	else if (fileNames[0].find("png") != std::string::npos)
 		LoadPNG(texture);
+
+	std::string name = path.substr(path.find_last_of("\\") + 1);
+	TextureSet[name] = texture;
+	return name;
+}
+
+std::string Importer::LoadSpecularGI(const std::string& path) {
+	auto texture = std::make_shared<TextureCube>(0, 0);
+
+	for (int mipLevel = 0; mipLevel < 5; ++mipLevel) {
+		std::vector<std::string> fileNames = AddCubemapFiles(path + "\\mipmap" + std::to_string(mipLevel));
+		if (fileNames.empty()) {
+			std::cout << path << "GI information can't be loaded.\n";
+			return "Load Fail";
+		}
+
+		for (int i = 0; i < 6; ++i) {
+			UncompressedImage image(fileNames[i], 3, false);
+
+			if (!image.GetData()) {
+				std::cout << "The texture: " + fileNames[i] + " does not exist";
+				return nullptr;
+			}
+
+			texture->SetSize(image.GetWidth(), image.GetHeight());
+			texture->SetPixelData(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, image.GetData(),
+				mipLevel, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
+		}
+	}
+	texture->SetMinFilter(FilterMode::LINEAR_MIPMAP_LINEAR);
 
 	std::string name = path.substr(path.find_last_of("\\") + 1);
 	TextureSet[name] = texture;

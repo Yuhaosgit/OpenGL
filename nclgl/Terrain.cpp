@@ -18,11 +18,11 @@ void Terrain::AddInstance(std::shared_ptr<Component> component) {
 
 Terrain::Terrain(const std::string& name, const float& stretchFlat, const float& stretchHeight, const float& texScale) {
 	auto path = Importer::FindFile("../Terrain", name);
-	auto image = ImageLoader::LoadPNG(path.c_str(), 1);
-	width = image.width;
-	height = image.height;
+	std::shared_ptr<UncompressedImage> image = std::make_shared<UncompressedImage>(path.c_str(), 1, true);
+	width = image->GetWidth();
+	height = image->GetHeight();
 
-	if (!image.data) {
+	if (!image->GetData()) {
 		std::cout << "Heightmap  can't load  file!\n";
 		return;
 	}
@@ -59,15 +59,13 @@ Terrain::Terrain(const std::string& name, const float& stretchFlat, const float&
 		int start = dataSize * i;
 		int end = dataSize * (i + 1);
 		threads.push_back(std::thread([=]
-			{CalculateVertices(vertex_scale, texture_scale, dataSize * i, dataSize * (i + 1), image.data); }));
+			{CalculateVertices(vertex_scale, texture_scale, dataSize * i, dataSize * (i + 1), image->GetData()); }));
 	}
 
 	for (std::thread& singleThread : threads) {
 		if (singleThread.joinable())
 			singleThread.join();
 	}
-
-	image.Release();
 
 	auto CalculateTriangles = [&]() {
 		int i = 0;

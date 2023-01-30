@@ -97,8 +97,8 @@ void DirectLightPass::Pass(Camera* camera) {
 			lightMat->SetTexture("shadowTex", light.lock()->shadowBuffer->GetRenderTexture("shadowTex"));
 			  
 			lightMat->SetTexture("enviDiffuseTex", Importer::GetTexture("EnviDiffuse"));
-			//lightMat->SetTexture("prefilterMap", Importer::GetTexture("mipmap0"));
-			//lightMat->SetTexture("LUT", Importer::GetTexture("LUT"));
+			lightMat->SetTexture("prefilterMap", Importer::GetTexture("Prefilter"));
+			lightMat->SetTexture("LUT", Importer::GetTexture("LUT"));
 
 			Material::shadowMatrix = light.lock()->lightProjMatrix * light.lock()->lightViewMatrix;
 			light.lock()->Render();
